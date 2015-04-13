@@ -1,0 +1,19 @@
+lazy val commonSettings = Seq(
+  organization := "com.wedt.priact",
+  version := "0.1",
+  scalaVersion := "2.11.6"
+)
+
+lazy val root = (project in file(".")).
+  settings(commonSettings: _*).
+  settings(
+    name := "PriAct",
+
+    libraryDependencies ++= {
+      val akkaVersion = "2.3.9"
+      Seq(
+        ("com.typesafe.akka" %% "akka-actor" % akkaVersion),
+        ("org.jsoup" % "jsoup" % "1.8.1")
+      )
+    }
+  )
