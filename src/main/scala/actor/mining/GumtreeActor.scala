@@ -33,7 +33,7 @@ class GumtreeActor extends Actor {
   import GumtreeActor._
   override def receive: Receive = {
     case GetPrices(product) => log.info(s"GetPrices: $product")
-      sender() ! Prices(getPrices(product).map((x:String) => x.toDouble))cza
+      sender() ! Prices(getPrices(product).map((x:String) => x.toDouble))
   }
 
   def getPrices(product: String) = {

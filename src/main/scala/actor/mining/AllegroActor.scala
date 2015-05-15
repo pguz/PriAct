@@ -33,10 +33,8 @@ class AllegroActor extends Actor {
   import AllegroActor._
   override def receive: Receive = {
     case GetPrices(product) => log.info(s"GetPrices: $product")
+     sender() ! Prices(getPrices(product).map((x:String) => x.replace(',','.').toDouble))
 
-     val prices = getPrices(product).map((x:String) => x.toDouble)
-
-      sender() ! Prices(prices)
   }
 
   def getPrices(product: String) = {
