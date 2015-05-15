@@ -23,6 +23,15 @@ object OlxActor {
   val priceClass = "price"
 
   def getSourceCode(product: String): Document = {
+    // Olx parametry GETa
+    // page=1 - numer strony z wynikami, jesli damy za duzy to przekieruje nas do http://olx.pl/oferty/?page=xx czyli wywali
+    // nasze zapytanie
+    // search[description]=1 - tak jak w allegro - szuka także w parametrach i opisach
+    // search[order]=filter_float_price%3Aasc - sortuje od najtanszych
+    // search[order]=filter_float_price%3Adesc - sortuje od najdrozszych
+    // search[order]=created_at%3Adesc - sortuje od najnowszych
+    // view=list -> widok listy; galleryWide - galeria 1; galleryBig - galeria typ 2
+    // TODO: warunek stopu dla pętli pobierania - sprawdzenie czy to co dostajemy ma w adresie q-$product
     Jsoup.connect(s"http://olx.pl/oferty/q-$product/").get()
   }
 }
