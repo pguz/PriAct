@@ -17,11 +17,15 @@ class DispatcherActor extends Actor {
   import DispatcherActor._
   val log = Logging(context.system, this)
   var gumtreeActor = context.actorOf(Props[GumtreeActor], name = "gumtree")
+  var allegroActor = context.actorOf(Props[AllegroActor], name = "allegro")
 
   override def receive: Receive = {
-    case GetPrizes(product) => log.info(s"GetPrizes: $product")
+    case GetPrices(product) => log.info(s"GetPrices: $product")
       gumtreeActor ! GumtreeActor.GetPrices(product)
-    case GumtreeActor.Prices(prices) => log.info(s"Received prices")
-      println(prices.toString()) //TODO: przeslac do aktora komunikujacego sie z uzytkownikiem
+      allegroActor ! AllegroActor.GetPrices(product)
+    case GumtreeActor.Prices(prices) => log.info(s"Received prices from Gumtree")
+      println("Gumtree: " + prices.toString()) //TODO: przeslac do aktora komunikujacego sie z uzytkownikiem
+    case AllegroActor.Prices(prices) => log.info(s"Received prices from Allegro")
+      println("Allegro: " + prices.toString()) //TODO: przeslac do aktora komunikujacego sie z uzytkownikiem
   }
 }

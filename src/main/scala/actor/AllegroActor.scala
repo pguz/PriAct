@@ -19,8 +19,8 @@ object AllegroActor {
   sealed trait AllegroResponse
   case class Prices(prices: List[String]) extends AllegroResponse
 
-  val prizePattern = new Regex("""\d+(,\d{1,2})?""")
-  val prizeClass = "price"
+  val pricePattern = new Regex("""\d+(,\d{1,2})?""")
+  val priceClass = "price"
 
   def getSourceCode(product: String): Document = {
     Jsoup.connect(s"http://allegro.pl/listing/listing.php?bmatch=seng-ps-mp-p-sm-isqm-2-e-0402&order=p&string=$product").get()
@@ -42,7 +42,7 @@ class AllegroActor extends Actor {
 
     //malo funkcyjnie, wykorzystana javowa biblioteka Jsoup
     val doc = getSourceCode(product)
-    val prices = doc.body().getElementsByClass(prizeClass)
+    val prices = doc.body().getElementsByClass(priceClass)
     val price: java.util.Iterator[Element] = prices.iterator()
     println("jestem " + price.hasNext())
     while(price.hasNext()) {
@@ -52,9 +52,9 @@ class AllegroActor extends Actor {
       if(cur_price.children().size() > 0) {
         //list = cur_price.child(0).text() :: list
         //println("cur_price.child(0): " + cur_price.child(0).text()).replaceAll(" ", ""))
-        val ext_prize = prizePattern.findFirstIn(cur_price.child(0).text())
-        if(!ext_prize.isEmpty) {
-          list = ext_prize.get :: list
+        val ext_price = pricePattern.findFirstIn(cur_price.child(0).text())
+        if(!ext_price.isEmpty) {
+          list = ext_price.get :: list
         }
       }
     }

@@ -19,8 +19,8 @@ object GumtreeActor {
   sealed trait GumtreeResponse
   case class Prices(prices: List[String]) extends GumtreeResponse
 
-  val prizePattern = new Regex("[0-9]+")
-  val prizeClass = "ar-price"
+  val pricePattern = new Regex("[0-9]+")
+  val priceClass = "ar-price"
 
   def getSourceCode(product: String): Document = {
     Jsoup.connect(s"http://www.gumtree.pl/fp-$product?Page=1").get()
@@ -42,14 +42,14 @@ class GumtreeActor extends Actor {
 
     //malo funkcyjnie, wykorzystana javowa biblioteka Jsoup
     val doc = getSourceCode(product)
-    val prices = doc.body().getElementsByClass(prizeClass)
+    val prices = doc.body().getElementsByClass(priceClass)
     val price: java.util.Iterator[Element] = prices.iterator()
     while(price.hasNext()) {
       val cur_price = price.next()
       if(cur_price.children().size() > 0) {
-        val ext_prize = prizePattern.findFirstIn(cur_price.child(0).text().replaceAll(" ", ""))
-        if(!ext_prize.isEmpty) {
-          list = ext_prize.get :: list
+        val ext_price = pricePattern.findFirstIn(cur_price.child(0).text().replaceAll(" ", ""))
+        if(!ext_price.isEmpty) {
+          list = ext_price.get :: list
         }
       }
     }
