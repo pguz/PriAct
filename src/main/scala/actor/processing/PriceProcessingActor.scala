@@ -2,6 +2,7 @@ package actor.processing
 
 import actor.mining.AllegroActor.AllegroPrices
 import actor.mining.GumtreeActor.GumtreePrices
+import actor.mining.OlxActor.OlxPrices
 import actor.mining.Prices
 import akka.actor.Actor
 import akka.event.Logging
@@ -26,7 +27,12 @@ class PriceProcessingActor extends Actor {
         println("Processing Gumtree prices!")
         println("MIN: " + prices.min)
         println("MAX: " + prices.max)
-        println("AVG: " + AllegroPrices(prices).average)
+        println("AVG: " + GumtreePrices(prices).average)
+      case OlxPrices(prices) => log.info("Processing prices from Olx")
+        println("Processing Olx prices!")
+        println("MIN: " + prices.min)
+        println("MAX: " + prices.max)
+        println("AVG: " + OlxPrices(prices).average)
     }
 
   }

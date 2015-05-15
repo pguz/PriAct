@@ -28,6 +28,7 @@ object GumtreeActor {
     // AdType=2 wybor rodzaju ogloszenie -> 1 - ogłoszenie "poszukuję"; 2 - "oferuję"; inne to ogłoszenia pracy itp
     // gallery=false -> false - widok listy; true - widok galerii
     // Page=1 numer strony z wynikami -> podanie wiekszego numeru strony niz ostatni (np. 4 gdzie mamy 1-3) powoduje wyswietlenie ostatniej strony wynikow (czyli np. 3)
+    //TODO: parsowanie tytułów bo gumtree sprawdza zarówno w opisie i tytule
     //TODO: warunek stopu pętli pobierania - sprawdzenie czy kolejna strona zwraca taką samą treść jak poprzednia
     Jsoup.connect(s"http://www.gumtree.pl/fp-$product?Page=1").get()
   }

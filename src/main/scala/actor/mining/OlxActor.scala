@@ -17,7 +17,7 @@ object OlxActor {
   case class GetPrices(req: String) extends OlxRequest
 
   sealed trait OlxResponse
-  case class Prices(prices: List[String]) extends OlxResponse
+  case class OlxPrices(override val prices: List[Double]) extends Prices(prices)
 
   val pricePattern = new Regex("[0-9]+")
   val priceClass = "price"
@@ -43,7 +43,8 @@ class OlxActor extends Actor {
 
   override def receive: Receive = {
     case GetPrices(product) => log.info(s"GetPrices: $product")
-      sender() ! Prices(getPrices(product))
+      sender() ! OlxPrices(getPrices(product).map((x:String) => x.replace(',','.').toDouble))
+
   }
 
   def getPrices(product: String) = {

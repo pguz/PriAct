@@ -24,6 +24,7 @@ class DispatcherActor extends Actor {
     case GetPrices(product) => log.info(s"GetPrices: $product")
       gumtreeActor ! GumtreeActor.GetPrices(product)
       allegroActor ! AllegroActor.GetPrices(product)
+      olxActor ! OlxActor.GetPrices(product)
     case prices: Prices => log.info("Received prices")
       processingActor ! PriceProcessingActor.Process(prices)
   }
