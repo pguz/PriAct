@@ -7,7 +7,7 @@ object DispatcherActor {
   def props(): Props = Props(new DispatcherActor())
 
   sealed trait DispatcherRequest
-  case class GetPrizes(req: String) extends DispatcherRequest
+  case class GetPrices(req: String) extends DispatcherRequest
 
   sealed trait DispatcherResponse
   case class Prices(prices: List[String]) extends DispatcherResponse
