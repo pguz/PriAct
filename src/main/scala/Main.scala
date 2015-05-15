@@ -1,3 +1,5 @@
+import actor.mining.DispatcherActor
+import DispatcherActor.GetPrices
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConverters._
@@ -14,9 +16,6 @@ import rx.lang.scala.Observable
 import rx.lang.scala.Subscription
 import rx.lang.scala.Scheduler
 import observablex._
-
-import actor.DispatcherActor.GetPrices
-import actor.{DispatcherActor}
 import akka.actor.{Props, ActorSystem}
 
 object Main extends SimpleSwingApplication with ConcreteSwingApi {

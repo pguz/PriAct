@@ -1,4 +1,4 @@
-package actor
+package actor.mining
 
 import akka.actor.Actor
 import akka.event.Logging
@@ -17,24 +17,30 @@ object AllegroActor {
   case class GetPrices(req: String) extends AllegroRequest
 
   sealed trait AllegroResponse
-  case class Prices(prices: List[String]) extends AllegroResponse
+  case class Prices(prices: List[Double]) extends AllegroResponse
 
   val pricePattern = new Regex("""\d+(,\d{1,2})?""")
   val priceClass = "price"
 
   def getSourceCode(product: String): Document = {
-    Jsoup.connect(s"http://allegro.pl/listing/listing.php?bmatch=seng-ps-mp-p-sm-isqm-2-e-0402&order=p&string=$product").get()
+    // Allegro parametry GET'a
+    // description=1 -> wyszukuje także w opisach i parametrach
+    // p=1 -> numer strony, jesli wyjdziemy wyzej to wyjdzie nam komunikat z pusta strona ("Wygląda na to, że nie mamy tego, czego szukasz.")
+    // limit=180 -> limit ilosci wpisow na strone - dostepne 60, 120, 180, inna wartosc wyswietli 60
+    // string=asd wyszukiwany tekst
+    //TODO: warunek stopu dla pętli pobierania: sprawdzenie czy na stronie wynikowej mamy komunikat zawarty wyżej
+    Jsoup.connect(s"http://allegro.pl/listing/listing.php?bmatch=seng-ps-mp-p-sm-isqm-2-e-0402&order=p&description=1&limit=180&string=$product").get()
   }
 }
 
 
 class AllegroActor extends Actor {
-  import actor.AllegroActor._
   val log = Logging(context.system, this)
-
+  import AllegroActor._
   override def receive: Receive = {
     case GetPrices(product) => log.info(s"GetPrices: $product")
-      sender() ! Prices(getPrices(product))
+     sender() ! Prices(getPrices(product).map((x:String) => x.replace(',','.').toDouble))
+
   }
 
   def getPrices(product: String) = {
