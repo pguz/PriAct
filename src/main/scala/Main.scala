@@ -1,5 +1,5 @@
-import actor.DispatcherActor.GetPrices
-import actor.{DispatcherActor}
+import actor.mining.DispatcherActor
+import DispatcherActor.GetPrices
 import akka.actor.{Props, ActorSystem}
 
 object Main extends App {

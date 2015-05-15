@@ -1,4 +1,4 @@
-package actor
+package actor.mining
 
 import akka.actor.{Actor, Props}
 import akka.event.Logging
@@ -10,7 +10,7 @@ object DispatcherActor {
   case class GetPrices(req: String) extends DispatcherRequest
 
   sealed trait DispatcherResponse
-  case class Prices(prices: List[String]) extends DispatcherResponse
+  case class Prices(prices: List[Double]) extends DispatcherResponse
 }
 
 class DispatcherActor extends Actor {
