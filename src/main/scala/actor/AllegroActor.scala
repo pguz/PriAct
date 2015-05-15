@@ -19,7 +19,7 @@ object AllegroActor {
   sealed trait AllegroResponse
   case class Prices(prices: List[String]) extends AllegroResponse
 
-  val pricePattern = new Regex("""(\d+\s?)+(,\d{1,2})?""")
+  val pricePattern = new Regex("""\d+(,\d{1,2})?""")
   val priceClass = "price"
 
   def getSourceCode(product: String): Document = {
@@ -47,12 +47,12 @@ class AllegroActor extends Actor {
     while(price.hasNext()) {
       val cur_price = price.next()
       if(cur_price.children().size() > 0) {
-        val ext_price = pricePattern.findFirstIn(cur_price.child(0).text())
+        val ext_price = pricePattern.findFirstIn(cur_price.child(0).text().replaceAll(" ", ""))
         if(!ext_price.isEmpty) {
           list = ext_price.get :: list
         }
       }
     }
-    list.reverse
+    list.reverse.sorted
   }
 }
