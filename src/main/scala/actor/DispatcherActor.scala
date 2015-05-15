@@ -5,7 +5,7 @@ import akka.event.Logging
 
 object DispatcherActor {
   def props(): Props = Props(new DispatcherActor())
-
+  
   sealed trait DispatcherRequest
   case class GetPrices(req: String) extends DispatcherRequest
 
@@ -27,5 +27,6 @@ class DispatcherActor extends Actor {
       println("Gumtree: " + prices.toString()) //TODO: przeslac do aktora komunikujacego sie z uzytkownikiem
     case AllegroActor.Prices(prices) => log.info(s"Received prices from Allegro")
       println("Allegro: " + prices.toString()) //TODO: przeslac do aktora komunikujacego sie z uzytkownikiem
+      
   }
 }

@@ -13,7 +13,10 @@ lazy val root = (project in file(".")).
       val akkaVersion = "2.3.9"
       Seq(
         ("com.typesafe.akka" %% "akka-actor" % akkaVersion),
-        ("org.jsoup" % "jsoup" % "1.8.1")
+        ("org.jsoup" % "jsoup" % "1.8.1"),
+        ("org.scala-lang.modules" %% "scala-swing" % "1.0.1"),
+        ("io.reactivex" %% "rxscala" % "0.23.0"),
+        ("io.reactivex" % "rxswing" % "0.21.0") // for Swing Scheduler in suggestions
       )
     }
   )
