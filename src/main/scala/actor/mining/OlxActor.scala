@@ -29,7 +29,6 @@ object OlxActor {
 
 
 class OlxActor extends Actor {
-  import actor.OlxActor._
   val log = Logging(context.system, this)
 
   override def receive: Receive = {
