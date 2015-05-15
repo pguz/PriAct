@@ -29,10 +29,7 @@ object OlxActor {
 
 
 class OlxActor extends Actor {
-<<<<<<< HEAD:src/main/scala/actor/mining/OlxActor.scala
-=======
   import OlxActor._
->>>>>>> Przeniesienie OlxActor do mining:src/main/scala/actor/mining/OlxActor.scala
   val log = Logging(context.system, this)
 
   override def receive: Receive = {
