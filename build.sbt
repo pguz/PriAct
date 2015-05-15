@@ -16,7 +16,10 @@ lazy val root = (project in file(".")).
         ("org.jsoup" % "jsoup" % "1.8.1"),
         ("org.scala-lang.modules" %% "scala-swing" % "1.0.1"),
         ("io.reactivex" %% "rxscala" % "0.23.0"),
-        ("io.reactivex" % "rxswing" % "0.21.0") // for Swing Scheduler in suggestions
+        ("io.reactivex" % "rxswing" % "0.21.0"), // for Swing Scheduler in suggestions
+        ("com.typesafe.slick" %% "slick" % "2.1.0"),
+        ("com.h2database" % "h2" % "1.3.175")
       )
+
     }
   )

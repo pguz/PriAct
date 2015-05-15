@@ -18,7 +18,7 @@ object AllegroActor {
   sealed trait AllegroResponse
   case class AllegroPrices(override val prices: List[Double]) extends Prices(prices)
 
-  val pricePattern = new Regex("""\d+(,\d{1,2})?""")
+  val pricePattern = new Regex("""\d+,\d{2}?""")
   val priceClass = "price"
 
   def getSourceCode(product: String): Document = {
