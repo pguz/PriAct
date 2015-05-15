@@ -4,7 +4,6 @@ import akka.actor.Actor
 import akka.event.Logging
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
-
 import scala.util.matching.Regex
 
 /**
@@ -17,7 +16,7 @@ object AllegroActor {
   case class GetPrices(req: String) extends AllegroRequest
 
   sealed trait AllegroResponse
-  case class Prices(prices: List[Double]) extends AllegroResponse
+  case class AllegroPrices(override val prices: List[Double]) extends Prices(prices)
 
   val pricePattern = new Regex("""\d+(,\d{1,2})?""")
   val priceClass = "price"
@@ -39,7 +38,7 @@ class AllegroActor extends Actor {
   import AllegroActor._
   override def receive: Receive = {
     case GetPrices(product) => log.info(s"GetPrices: $product")
-     sender() ! Prices(getPrices(product).map((x:String) => x.replace(',','.').toDouble))
+     sender() ! AllegroPrices(getPrices(product).map((x:String) => x.replace(',','.').toDouble))
 
   }
 
