@@ -1,6 +1,5 @@
 package actor.mining
 
-import actor.mining.AllegroActor.AllegroPrices
 import actor.processing.PriceProcessingActor
 import akka.actor.{Actor, Props}
 import akka.event.Logging
@@ -27,6 +26,5 @@ class DispatcherActor extends Actor {
       allegroActor ! AllegroActor.GetPrices(product)
     case prices: Prices => log.info("Received prices")
       processingActor ! PriceProcessingActor.Process(prices)
-      
   }
 }
