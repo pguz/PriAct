@@ -19,6 +19,7 @@ class DispatcherActor extends Actor {
   var gumtreeActor = context.actorOf(Props[GumtreeActor], name = "gumtree")
   var allegroActor = context.actorOf(Props[AllegroActor], name = "allegro")
   var processingActor = context.actorOf(Props[PriceProcessingActor], name = "processing")
+  var olxActor = context.actorOf(Props[OlxActor], name = "olx")
 
   override def receive: Receive = {
     case GetPrices(product) => log.info(s"GetPrices: $product")
@@ -26,12 +27,6 @@ class DispatcherActor extends Actor {
       allegroActor ! AllegroActor.GetPrices(product)
     case prices: Prices => log.info("Received prices")
       processingActor ! PriceProcessingActor.Process(prices)
-//    case GumtreeActor.GumtreePrices(prices) => log.info(s"Received prices from Gumtree")
-//      println("Gumtree: " + prices.toString()) //TODO: przeslac do aktora komunikujacego sie z uzytkownikiem
-//    case AllegroActor.AllegroPrices(prices) => log.info(s"Received prices from Allegro")
-//      println("Allegro: " + prices.toString()) //TODO: przeslac do aktora komunikujacego sie z uzytkownikiem
-//      println("MIN: " + prices.min)
-//      println("MAX: " + prices.max)
-//      println("AVG: " + AllegroActor.AllegroPrices(prices).average)
+      
   }
 }
