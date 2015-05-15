@@ -1,4 +1,4 @@
-package actor
+package actor.mining
 
 import akka.actor.Actor
 import akka.event.Logging
@@ -29,7 +29,10 @@ object OlxActor {
 
 
 class OlxActor extends Actor {
-  import actor.OlxActor._
+<<<<<<< HEAD:src/main/scala/actor/mining/OlxActor.scala
+=======
+  import OlxActor._
+>>>>>>> Przeniesienie OlxActor do mining:src/main/scala/actor/mining/OlxActor.scala
   val log = Logging(context.system, this)
 
   override def receive: Receive = {
