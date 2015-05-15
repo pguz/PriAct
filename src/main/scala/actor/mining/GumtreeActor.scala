@@ -16,8 +16,7 @@ object GumtreeActor {
   sealed trait GumtreeRequest
   case class GetPrices(req: String) extends GumtreeRequest
 
-  sealed trait GumtreeResponse
-  case class Prices(prices: List[Double]) extends GumtreeResponse
+  case class GumtreePrices(override val prices: List[Double]) extends Prices(prices)
 
   val pricePattern = new Regex("[0-9]+")
   val priceClass = "ar-price"
@@ -33,7 +32,7 @@ class GumtreeActor extends Actor {
   import GumtreeActor._
   override def receive: Receive = {
     case GetPrices(product) => log.info(s"GetPrices: $product")
-      sender() ! Prices(getPrices(product).map((x:String) => x.toDouble))
+      sender() ! GumtreePrices(getPrices(product).map((x:String) => x.toDouble))
   }
 
   def getPrices(product: String) = {
