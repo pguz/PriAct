@@ -1,5 +1,5 @@
 import actor.mining.DispatcherActor
-import actor.mining.DispatcherActor.{CrawlerNotFound, CrawlerAdded, DispatcherRespone, GetPrices}
+import actor.mining.DispatcherActor._
 import akka.actor.{Props, ActorSystem}
 import akka.util.Timeout
 
@@ -15,7 +15,7 @@ trait ClientActorApi {
 
   def createCrawler(name: String): Future[Boolean]  = {
     val f = dispatcherActor ? DispatcherActor.CreateCrawler(name)
-    f.mapTo[DispatcherRespone].map(_ match {
+    f.mapTo[DispatcherResponse].map(_ match {
       case CrawlerAdded     => true
       case CrawlerNotFound  => false
     })
@@ -23,6 +23,7 @@ trait ClientActorApi {
 
   def getPrices(product: String): Future[List[(String, Double)]] = {
     val f = dispatcherActor ? DispatcherActor.GetPrices(product)
-    f.mapTo[DispatcherActor.SendPrices].map(x => x.prices.map((x.crawName, _)) )
+    f.mapTo[SendListPrices].map{case SendListPrices(x) => x.flatMap(y => y.prices.map((y.crawName, _)))}
+    //f.mapTo[List[DispatcherActor.SendPrices]].map(x => x.map(y => y.prices.map( (y.crawName, _) ) ) )
   }
 }

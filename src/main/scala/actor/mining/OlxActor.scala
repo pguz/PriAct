@@ -1,6 +1,6 @@
 package actor.mining
 
-import akka.actor.Actor
+import akka.actor.{ActorRef, Actor}
 import akka.event.Logging
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
@@ -13,11 +13,7 @@ import scala.util.matching.Regex
 
 object OlxActor {
 
-  sealed trait OlxRequest
-  case class GetPrices(req: String) extends OlxRequest
-
-  sealed trait OlxResponse
-  case class OlxPrices(override val prices: List[Double]) extends Prices(prices)
+  case class GetPrices(req: String) extends CrawlerActor.GetPrices(req)
 
   val pricePattern = new Regex("[0-9]+")
   val priceClass = "price"
@@ -43,7 +39,7 @@ class OlxActor extends Actor {
 
   override def receive: Receive = {
     case GetPrices(product) => log.info(s"GetPrices: $product")
-      sender() ! OlxPrices(getPrices(product).map((x:String) => x.replace(',','.').toDouble))
+      sender() ! CrawlerActor.SendPrices(getPrices(product).map((x:String) => x.replace(',','.').toDouble))
 
   }
 
@@ -65,4 +61,10 @@ class OlxActor extends Actor {
     }
     list.reverse
   }
+}
+
+class OlxActorRef(override val actorRef: ActorRef, override val name: String)
+  extends CrawlerActorRef(actorRef, name) {
+  override def getPrices(prod: String): OlxActor.GetPrices
+  = OlxActor.GetPrices(prod)
 }

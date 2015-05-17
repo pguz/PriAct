@@ -1,6 +1,6 @@
 package actor.mining
 
-import akka.actor.Actor
+import akka.actor.{ActorRef, Actor}
 import akka.event.Logging
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
@@ -13,8 +13,7 @@ import scala.util.matching.Regex
 
 object GumtreeActor {
 
-  sealed trait GumtreeRequest
-  case class GetPrices(req: String) extends GumtreeRequest
+  case class GetPrices(req: String) extends CrawlerActor.GetPrices(req)
 
   case class GumtreePrices(override val prices: List[Double]) extends Prices(prices)
 
@@ -35,12 +34,12 @@ object GumtreeActor {
 }
 
 
-class GumtreeActor extends Actor {
+class GumtreeActor extends CrawlerActor {
   val log = Logging(context.system, this)
   import GumtreeActor._
   override def receive: Receive = {
     case GetPrices(product) => log.info(s"GetPrices: $product")
-      sender() ! GumtreePrices(getPrices(product).map((x:String) => x.toDouble))
+      sender() ! CrawlerActor.SendPrices(getPrices(product).map((x:String) => x.toDouble))
   }
 
   def getPrices(product: String) = {
@@ -61,4 +60,10 @@ class GumtreeActor extends Actor {
     }
     list.reverse
   }
+}
+
+class GumtreeActorRef(override val actorRef: ActorRef, override val name: String)
+    extends CrawlerActorRef(actorRef, name) {
+  override def getPrices(prod: String): GumtreeActor.GetPrices
+  = GumtreeActor.GetPrices(prod)
 }

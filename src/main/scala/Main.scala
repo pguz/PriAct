@@ -3,7 +3,7 @@ import javax.swing.table.{DefaultTableModel, TableModel}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.swing._
-import scala.util.{ Try, Success, Failure }
+import scala.util.{Success, Failure }
 import scala.swing.event._
 import swing.Swing._
 import javax.swing.UIManager
@@ -25,6 +25,10 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
   def top = new MainFrame {
     title = "Price Actual"
     minimumSize = new Dimension(900, 600)
+
+    val cboxAllegro = new CheckBox("Allegro")
+    val cboxGumtree = new CheckBox("Gumtree")
+    val cboxOlx = new CheckBox("Olx")
 
     val btnFind = new Button("Find")
     val btnChoose = new Button("Choose")
@@ -54,6 +58,11 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
         contents += new BoxPanel(orientation = Vertical) {
           maximumSize = new Dimension(240, 900)
           border = EmptyBorder(top = 10, left = 10, bottom = 10, right = 10)
+          contents += new BoxPanel(orientation = Horizontal) {
+            maximumSize = new Dimension(640, 30)
+            border = EmptyBorder(top = 5, left = 0, bottom = 5, right = 0)
+            contents.append(cboxAllegro, cboxGumtree, cboxOlx)
+          }
           contents += new BoxPanel(orientation = Vertical) {
             maximumSize = new Dimension(640, 30)
             border = EmptyBorder(top = 5, left = 0, bottom = 5, right = 0)
@@ -82,7 +91,7 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     
     val eventScheduler = SchedulerEx.SwingEventThreadScheduler
 
-    val crawList = List("Allegro")
+    val crawList = List("Allegro", "Gumtree")
 
     crawList foreach {
       crawler => createCrawler(crawler) onComplete {
@@ -95,12 +104,16 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     val obs: Observable[String] = btnFind.clicks.observeOn(eventScheduler).map(
         _ => searchTermField.text)
 
+    val cboxObs: Observable[Boolean] = cboxAllegro.stateValues.observeOn(eventScheduler)
+    cboxObs.subscribe(
+      v => println("value: " + v)
+    )
 
     obs.subscribe(
       n => getPrices(n) onComplete {
         case Success(results)   =>
           if(tableModel.getRowCount > 0) tableModel.setRowCount(0)
-          results.foreach{ res =>
+          results.sortBy(_._2).foreach{ res =>
             tableModel.addRow(Array[AnyRef](res._1, n ,res._2.toString()))}
         case Failure(err) => displayCom("getPrices error: " + err.getMessage)
       }
@@ -125,7 +138,16 @@ trait ConcreteSwingApi extends SwingApi {
       case _ => None
     }
   }
+
+  type StateChanged = scala.swing.event.ButtonClicked
+  object StateChanged {
+    def unapply(x: Event) = x match {
+      case sc: StateChanged => Some(sc.source.asInstanceOf[CheckBox])
+      case _ => None
+    }
+  }
   
   type TextField = scala.swing.TextField
   type Button = scala.swing.Button
+  type CheckBox = scala.swing.CheckBox
 }
