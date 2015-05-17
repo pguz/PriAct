@@ -1,15 +1,14 @@
-
-import javax.swing.table.{DefaultTableModel, TableModel}
-
+import observablex._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.swing._
-import scala.util.{Success, Failure }
 import scala.swing.event._
 import swing.Swing._
+import javax.swing.table.{DefaultTableModel}
 import javax.swing.UIManager
 import Orientation._
+import scala.util.{Success, Failure }
 import rx.lang.scala.Observable
-import observablex._
+
 
 object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActorApi {
   
@@ -26,21 +25,21 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     title = "Price Actual"
     minimumSize = new Dimension(900, 600)
 
-    val cboxAllegro = new CheckBox("Allegro")
-    val cboxGumtree = new CheckBox("Gumtree")
-    val cboxOlx = new CheckBox("Olx")
+    val cboxAllegro   = new CheckBox("Allegro")
+    val cboxGumtree   = new CheckBox("Gumtree")
+    val cboxOlx       = new CheckBox("Olx")
 
-    val btnFind = new Button("Find")
-    val btnChoose = new Button("Choose")
-    val searchTermField = new TextField
-    val tableModel = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Sklep", "Nazwa", "Cena") )
+    val btnFind       = new Button("Find")
+    val btnChoose     = new Button("Choose")
+    val txtsearchTerm = new TextField
+    val tblProd = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Sklep", "Nazwa", "Cena") )
     val productsList = new Table(25, 3) {
       import javax.swing.table._
       rowHeight = 25
       autoResizeMode = Table.AutoResizeMode.NextColumn
       showGrid = true
       gridColor = new java.awt.Color(150, 150, 150)
-      model = tableModel
+      model = tblProd
 
       peer.setRowSorter(new TableRowSorter(model))
     }
@@ -49,7 +48,6 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
       import javax.swing.border._
       border = new EtchedBorder(EtchedBorder.LOWERED)
       editable = false
-      peer.setContentType("text/html")
     }
 
     contents = new BoxPanel(orientation = Vertical) {
@@ -67,7 +65,7 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
             maximumSize = new Dimension(640, 30)
             border = EmptyBorder(top = 5, left = 0, bottom = 5, right = 0)
             contents += new BoxPanel(orientation = Horizontal) {
-              contents += searchTermField
+              contents += txtsearchTerm
             }
             contents += new BorderPanel {
               add(btnFind, BorderPanel.Position.Center)
@@ -91,7 +89,7 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     
     val eventScheduler = SchedulerEx.SwingEventThreadScheduler
 
-    val crawList = List("Allegro", "Gumtree")
+    val crawList = List("Allegro", "Olx", "Gumtree")
 
     crawList foreach {
       crawler => createCrawler(crawler) onComplete {
@@ -102,7 +100,7 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     }
 
     val obs: Observable[String] = btnFind.clicks.observeOn(eventScheduler).map(
-        _ => searchTermField.text)
+        _ => txtsearchTerm.text)
 
     val cboxObs: Observable[Boolean] = cboxAllegro.stateValues.observeOn(eventScheduler)
     cboxObs.subscribe(
@@ -112,9 +110,9 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     obs.subscribe(
       n => getPrices(n) onComplete {
         case Success(results)   =>
-          if(tableModel.getRowCount > 0) tableModel.setRowCount(0)
+          if(tblProd.getRowCount > 0) tblProd.setRowCount(0)
           results.sortBy(_._2).foreach{ res =>
-            tableModel.addRow(Array[AnyRef](res._1, n ,res._2.toString()))}
+            tblProd.addRow(Array[AnyRef](res._1, n ,res._2.toString()))}
         case Failure(err) => displayCom("getPrices error: " + err.getMessage)
       }
     )

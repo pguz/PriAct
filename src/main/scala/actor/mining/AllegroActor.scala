@@ -1,19 +1,11 @@
 package actor.mining
 
 import akka.actor.{ActorRef}
-import akka.event.Logging
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import scala.util.matching.Regex
 
-/**
- * Created by galvanize on 4/13/15.
- */
-
 object AllegroActor  {
-
-  case class GetPrices(req: String) extends CrawlerActor.GetPrices(req)
-
   val pricePattern = new Regex("""\d+,\d{2}?""")
   val priceClass = "price"
 
@@ -30,14 +22,10 @@ object AllegroActor  {
 
 
 class AllegroActor extends CrawlerActor {
-  val log = Logging(context.system, this)
   import AllegroActor._
-  override def receive: Receive = {
-    case GetPrices(product) => log.info(s"GetPrices: $product")
-     sender() ! CrawlerActor.SendPrices(getPrices(product).map((x:String) => x.replace(',','.').toDouble))
-  }
 
-  def getPrices(product: String) = {
+  override def getPrices(product: String): List[String]= {
+    println("AllegroActor: getPrices")
     var list: List[String] = List()
 
     //malo funkcyjnie, wykorzystana javowa biblioteka Jsoup
@@ -53,12 +41,10 @@ class AllegroActor extends CrawlerActor {
         }
       }
     }
-    list.reverse.sorted
+    list.reverse.sorted.map(_.replace(',','.'))
   }
 }
 
 class AllegroActorRef(override val actorRef: ActorRef, override val name: String)
     extends CrawlerActorRef(actorRef, name) {
-  override def getPrices(prod: String): AllegroActor.GetPrices
-    = AllegroActor.GetPrices(prod)
 }

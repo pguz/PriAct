@@ -1,19 +1,11 @@
 package actor.mining
 
-import akka.actor.{ActorRef, Actor}
-import akka.event.Logging
+import akka.actor.{ActorRef}
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 
 import scala.util.matching.Regex
-
-/**
- * Created by galvanize on 4/13/15.
- */
-
 object OlxActor {
-
-  case class GetPrices(req: String) extends CrawlerActor.GetPrices(req)
 
   val pricePattern = new Regex("[0-9]+")
   val priceClass = "price"
@@ -33,19 +25,12 @@ object OlxActor {
 }
 
 
-class OlxActor extends Actor {
+class OlxActor extends CrawlerActor {
   import OlxActor._
-  val log = Logging(context.system, this)
 
-  override def receive: Receive = {
-    case GetPrices(product) => log.info(s"GetPrices: $product")
-      sender() ! CrawlerActor.SendPrices(getPrices(product).map((x:String) => x.replace(',','.').toDouble))
-
-  }
-
-  def getPrices(product: String) = {
+  override def getPrices(product: String): List[String] = {
     var list: List[String] = List()
-
+    println("OlxActor: getPrices")
     //malo funkcyjnie, wykorzystana javowa biblioteka Jsoup
     val doc = getSourceCode(product)
     val prices = doc.body().getElementsByClass(priceClass)
@@ -59,12 +44,12 @@ class OlxActor extends Actor {
         }
       }
     }
-    list.reverse
+    val l = list.reverse.map(_.replace(',','.'))
+    println("olx: " + l)
+    l
   }
 }
 
 class OlxActorRef(override val actorRef: ActorRef, override val name: String)
-  extends CrawlerActorRef(actorRef, name) {
-  override def getPrices(prod: String): OlxActor.GetPrices
-  = OlxActor.GetPrices(prod)
+    extends CrawlerActorRef(actorRef, name) {
 }

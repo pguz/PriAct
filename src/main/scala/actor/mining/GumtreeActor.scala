@@ -7,15 +7,7 @@ import org.jsoup.nodes.{Document, Element}
 
 import scala.util.matching.Regex
 
-/**
- * Created by galvanize on 4/13/15.
- */
-
 object GumtreeActor {
-
-  case class GetPrices(req: String) extends CrawlerActor.GetPrices(req)
-
-  case class GumtreePrices(override val prices: List[Double]) extends Prices(prices)
 
   val pricePattern = new Regex("[0-9]+")
   val priceClass = "ar-price"
@@ -37,12 +29,9 @@ object GumtreeActor {
 class GumtreeActor extends CrawlerActor {
   val log = Logging(context.system, this)
   import GumtreeActor._
-  override def receive: Receive = {
-    case GetPrices(product) => log.info(s"GetPrices: $product")
-      sender() ! CrawlerActor.SendPrices(getPrices(product).map((x:String) => x.toDouble))
-  }
 
-  def getPrices(product: String) = {
+  override def getPrices(product: String): List[String] = {
+    println("GumtreeActor: getPrices")
     var list: List[String] = List()
 
     //malo funkcyjnie, wykorzystana javowa biblioteka Jsoup
@@ -64,6 +53,4 @@ class GumtreeActor extends CrawlerActor {
 
 class GumtreeActorRef(override val actorRef: ActorRef, override val name: String)
     extends CrawlerActorRef(actorRef, name) {
-  override def getPrices(prod: String): GumtreeActor.GetPrices
-  = GumtreeActor.GetPrices(prod)
 }

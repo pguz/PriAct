@@ -15,10 +15,12 @@ object DispatcherActor {
   
   sealed trait DispatcherRequest
   case class CreateCrawler(name: String) extends DispatcherRequest
+  case class RemoveCrawler(name: String) extends DispatcherRequest
   case class GetPrices(req: String) extends DispatcherRequest
 
   sealed trait DispatcherResponse
   case object CrawlerAdded extends  DispatcherResponse
+  case object CrawlerRemoved extends  DispatcherResponse
   case object CrawlerNotFound extends DispatcherResponse
   case class SendPrices(crawName: String, prices: List[Double])
   case class SendListPrices(prices: List[SendPrices])
@@ -27,7 +29,7 @@ object DispatcherActor {
 class DispatcherActor extends Actor {
   import DispatcherActor._
   val log = Logging(context.system, this)
-  implicit val timeout: Timeout = Timeout(16 seconds)
+  implicit val timeout: Timeout = Timeout(50 seconds)
   var processingActor = context.actorOf(Props[PriceProcessingActor], name = "processing")
 
   var crawList: List[CrawlerActorRef] = List()
@@ -37,11 +39,21 @@ class DispatcherActor extends Actor {
     case "Gumtree"  => Some(new GumtreeActorRef(context.actorOf(Props[GumtreeActor], name = crawName), crawName))
     case "Olx"      => Some(new OlxActorRef(context.actorOf(Props[OlxActor], name = crawName), crawName))
     case _          => None
+  }
 
+  def remove(crawName: String): Boolean = {
+    val crawsPart = crawList.partition(e => e.name == crawName)
+
+    if(crawsPart._1.size == 0)
+      return false
+
+    crawList = crawsPart._2
+    crawsPart._1.foreach(_.actorRef ! PoisonPill)
+    return true
   }
 
   def getPrices(crawler: CrawlerActorRef, prod: String): Future[DispatcherActor.SendPrices] =
-    (crawler.actorRef ? crawler.getPrices(prod)).mapTo[CrawlerActor.SendPrices].map{
+    (crawler.actorRef ? CrawlerActor.GetPrices(prod)).mapTo[CrawlerActor.SendPrices].map{
       case CrawlerActor.SendPrices(l) => DispatcherActor.SendPrices(crawler.name, l)}
 
   override def receive: Receive = {
@@ -59,6 +71,18 @@ class DispatcherActor extends Actor {
       }
     }
 
+    case RemoveCrawler(crawName) => {
+      println("RemoveCrawler: " + crawName)
+
+      remove(crawName) match {
+        case true   =>
+          sender ! CrawlerRemoved
+        case false  =>
+          sender ! CrawlerNotFound
+      }
+    }
+
+
     case GetPrices(prod) => {
       println(s"GetPrices: $prod")
 
@@ -66,7 +90,7 @@ class DispatcherActor extends Actor {
 
       Future.sequence(crawList.map(crawler => getPrices(crawler, prod))) onComplete {
         case Success(x) => {
-          println("GetPrices Success" + x)
+          println("GetPrices Success " + x)
           reqSender ! DispatcherActor.SendListPrices(x)
         }
         case Failure(err) => {
@@ -74,20 +98,6 @@ class DispatcherActor extends Actor {
           reqSender ! Status.Failure(err)
         }
       }
-
-      /*crawList foreach {
-        crawler =>
-          (crawler.actorRef ? crawler.getPrices(prod)).mapTo[CrawlerActor.SendPrices] onComplete {
-             case Success(CrawlerActor.SendPrices(prices)) => {
-               println("GetPrices Success")
-               reqSender ! DispatcherActor.SendPrices(crawler.name, prices)
-             }
-             case Failure(err) => {
-               println("GetPrices Failure")
-               reqSender ! Status.Failure(err)
-             }
-          }
-      }*/
     }
   }
 }
