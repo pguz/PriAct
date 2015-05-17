@@ -3,7 +3,7 @@ import scala.slick.driver.H2Driver.simple._
 import scala.slick.lifted.{ProvenShape, ForeignKeyQuery}
 
 class PricesData(tag: Tag)
-  extends Table[(Int, String, String, String, String, String)](tag, "PRICES") {
+  extends Table[(Int, String, String, String, String)](tag, "PRICES") {
 
   def id: Column[Int] = column[Int]("PRICE_ID", O.PrimaryKey)
   def name: Column[String] = column[String]("PROD_NAME")
