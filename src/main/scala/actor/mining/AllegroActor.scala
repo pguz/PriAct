@@ -43,6 +43,8 @@ class AllegroActor extends CrawlerActor {
     }
     list.reverse.sorted.map(_.replace(',','.'))
   }
+
+  override def getDescription(id: String): String = s"Allegro $id: MOCK"
 }
 
 class AllegroActorRef(override val actorRef: ActorRef, override val name: String)

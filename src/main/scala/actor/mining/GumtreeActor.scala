@@ -27,7 +27,6 @@ object GumtreeActor {
 
 
 class GumtreeActor extends CrawlerActor {
-  val log = Logging(context.system, this)
   import GumtreeActor._
 
   override def getPrices(product: String): List[String] = {
@@ -49,6 +48,8 @@ class GumtreeActor extends CrawlerActor {
     }
     list.reverse
   }
+
+  override def getDescription(id: String): String = s"Gumtree $id: MOCK"
 }
 
 class GumtreeActorRef(override val actorRef: ActorRef, override val name: String)

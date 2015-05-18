@@ -44,10 +44,10 @@ class OlxActor extends CrawlerActor {
         }
       }
     }
-    val l = list.reverse.map(_.replace(',','.'))
-    println("olx: " + l)
-    l
+    list.reverse.map(_.replace(',','.'))
   }
+
+  override def getDescription(id: String): String = s"Olx $id: MOCK"
 }
 
 class OlxActorRef(override val actorRef: ActorRef, override val name: String)

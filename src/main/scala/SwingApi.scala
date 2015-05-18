@@ -88,7 +88,6 @@ trait SwingApi {
     def stateValues: Observable[Boolean] =
       Observable.create(
         (observer: Observer[Boolean]) => {
-          println("Selected")
           val reactor: Reaction
           = {
               case StateChanged(x) =>

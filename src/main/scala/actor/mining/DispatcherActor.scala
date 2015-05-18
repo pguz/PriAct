@@ -2,7 +2,6 @@ package actor.mining
 
 import actor.processing.PriceProcessingActor
 import akka.actor._
-import akka.event.Logging
 import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent._
@@ -11,93 +10,153 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
 
 
-object DispatcherActor {
+object DispatcherProtocol {
   
   sealed trait DispatcherRequest
-  case class CreateCrawler(name: String) extends DispatcherRequest
-  case class RemoveCrawler(name: String) extends DispatcherRequest
-  case class GetPrices(req: String) extends DispatcherRequest
+  case class CreateCrawler(name: String)
+    extends DispatcherRequest
+  case class RemoveCrawler(name: String)
+    extends DispatcherRequest
+  case class GetPrices(req: String)
+    extends DispatcherRequest
+  case class GetDescription(shop: String, id: String)
+    extends DispatcherRequest
 
   sealed trait DispatcherResponse
-  case object CrawlerAdded extends  DispatcherResponse
-  case object CrawlerRemoved extends  DispatcherResponse
-  case object CrawlerNotFound extends DispatcherResponse
+  case object NoSuchMessage
+    extends DispatcherResponse
+  case object CrawlerAdded
+    extends DispatcherResponse
+  case object CrawlerRemoved
+    extends DispatcherResponse
+  case object CrawlerNotFound
+    extends DispatcherResponse
   case class SendPrices(crawName: String, prices: List[Double])
+    extends DispatcherResponse
   case class SendListPrices(prices: List[SendPrices])
+    extends DispatcherResponse
+  case class SendDescription(desc: String)
+    extends DispatcherResponse
 }
 
-class DispatcherActor extends Actor {
-  import DispatcherActor._
-  val log = Logging(context.system, this)
-  implicit val timeout: Timeout = Timeout(50 seconds)
-  var processingActor = context.actorOf(Props[PriceProcessingActor], name = "processing")
+class DispatcherActor extends Actor with ActorLogging {
+  import DispatcherProtocol._
 
-  var crawList: List[CrawlerActorRef] = List()
+  implicit val timeout: Timeout
+    = Timeout(50 seconds)
+  var processingActor
+    = context.actorOf(Props[PriceProcessingActor], name = "processing")
+  var crawList: List[CrawlerActorRef]
+    = List()
 
-  def create(crawName: String): Option[CrawlerActorRef] = crawName match {
-    case "Allegro"  => Some(new AllegroActorRef(context.actorOf(Props[AllegroActor], name = crawName), crawName))
-    case "Gumtree"  => Some(new GumtreeActorRef(context.actorOf(Props[GumtreeActor], name = crawName), crawName))
-    case "Olx"      => Some(new OlxActorRef(context.actorOf(Props[OlxActor], name = crawName), crawName))
-    case _          => None
+  override def receive: Receive = {
+    case CreateCrawler(crawName)
+      => crawlerCreation(crawName)
+
+    case RemoveCrawler(crawName)
+      => crawlerRemoval(crawName)
+
+    case GetPrices(prod)
+      => priceGetter(prod)
+
+    case GetDescription(shop, id)
+      => descriptionGetter(shop, id)
+
+    case _
+      => sender() ! NoSuchMessage
   }
 
-  def remove(crawName: String): Boolean = {
-    val crawsPart = crawList.partition(e => e.name == crawName)
+  def crawlerCreation(crawName: String): Unit = {
+    log.info(s"CreateCrawler: $crawName")
 
+    createCrawler(crawName) match {
+      case Some(actorRef) => {
+        crawList = actorRef :: crawList
+        log.info(s"$crawName has been added")
+        sender ! CrawlerAdded
+      }
+      case None => {
+        log.info(s"$crawName has not been added")
+        sender ! CrawlerNotFound
+      }
+    }
+  }
+
+  def crawlerRemoval(crawName: String): Unit = {
+    log.info(s"RemoveCrawler: $crawName")
+
+    removeCrawler(crawName) match {
+      case true   =>
+        log.debug(s"$crawName has been removed")
+        sender ! CrawlerRemoved
+      case false  =>
+        log.debug(s"$crawName has not been removed")
+        sender ! CrawlerNotFound
+    }
+  }
+
+  def priceGetter(prod: String): Unit = {
+    log.info(s"GetPrices: $prod")
+
+    val reqSender = sender // inaczej nie dziala, wspolbieznie moze byc niebezpiecznie.
+
+    Future.sequence(crawList.map(crawler => getPrices(crawler, prod))) onComplete {
+      case Success(x) => {
+        log.debug("GetPrices with success")
+        reqSender ! SendListPrices(x)
+      }
+      case Failure(err) => {
+        log.debug("GetPrices with error: " + err.getMessage)
+        reqSender ! Status.Failure(err)
+      }
+    }
+  }
+
+  def descriptionGetter(shop: String, id: String): Unit = {
+    log.info(s"GetDesc: $id from $shop")
+
+    val reqSender = sender
+
+    crawList.find(_.name == shop) match {
+      case Some(crawler) => {
+        (crawler.actorRef ? CrawlerProtocol.GetDescription(id)).mapTo[CrawlerProtocol.SendDescription] onComplete {
+          case Success(CrawlerProtocol.SendDescription(d)) => {
+            log.debug("GetDescription with success")
+            reqSender ! SendDescription(d)
+          }
+          case Failure(err) => {
+            log.debug("GetDescription with error: " + err.getMessage)
+            reqSender ! Status.Failure(err)
+          }
+        }
+      }
+      case None =>
+        sender() ! CrawlerNotFound
+    }
+  }
+
+  def createCrawler(crawName: String): Option[CrawlerActorRef] = crawName match {
+    case "Allegro"
+      => Some(new AllegroActorRef(context.actorOf(Props[AllegroActor], name = crawName), crawName))
+    case "Gumtree"
+      => Some(new GumtreeActorRef(context.actorOf(Props[GumtreeActor], name = crawName), crawName))
+    case "Olx"
+      => Some(new OlxActorRef(context.actorOf(Props[OlxActor], name = crawName), crawName))
+    case _
+      => None
+  }
+
+  def removeCrawler(crawName: String): Boolean = {
+    val crawsPart = crawList.partition(e => e.name == crawName)
     if(crawsPart._1.size == 0)
       return false
-
     crawList = crawsPart._2
     crawsPart._1.foreach(_.actorRef ! PoisonPill)
     return true
   }
 
-  def getPrices(crawler: CrawlerActorRef, prod: String): Future[DispatcherActor.SendPrices] =
-    (crawler.actorRef ? CrawlerActor.GetPrices(prod)).mapTo[CrawlerActor.SendPrices].map{
-      case CrawlerActor.SendPrices(l) => DispatcherActor.SendPrices(crawler.name, l)}
+  def getPrices(crawler: CrawlerActorRef, prod: String): Future[SendPrices] =
+    (crawler.actorRef ? CrawlerProtocol.GetPrices(prod)).mapTo[CrawlerProtocol.SendPrices].map{
+      case CrawlerProtocol.SendPrices(l) => SendPrices(crawler.name, l)}
 
-  override def receive: Receive = {
-    case CreateCrawler(crawName) => {
-      println("CreateCrawler: " + crawName)
-
-      create(crawName) match {
-        case Some(actorRef) => {
-          crawList = actorRef :: crawList
-          sender ! CrawlerAdded
-        }
-        case None => {
-          sender ! CrawlerNotFound
-        }
-      }
-    }
-
-    case RemoveCrawler(crawName) => {
-      println("RemoveCrawler: " + crawName)
-
-      remove(crawName) match {
-        case true   =>
-          sender ! CrawlerRemoved
-        case false  =>
-          sender ! CrawlerNotFound
-      }
-    }
-
-
-    case GetPrices(prod) => {
-      println(s"GetPrices: $prod")
-
-      val reqSender = sender // inaczej nie dziala.
-
-      Future.sequence(crawList.map(crawler => getPrices(crawler, prod))) onComplete {
-        case Success(x) => {
-          println("GetPrices Success " + x)
-          reqSender ! DispatcherActor.SendListPrices(x)
-        }
-        case Failure(err) => {
-          println("GetPrices Failure " + err.getMessage)
-          reqSender ! Status.Failure(err)
-        }
-      }
-    }
-  }
 }

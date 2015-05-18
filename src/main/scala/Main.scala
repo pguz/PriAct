@@ -22,33 +22,43 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
   
 
   def top = new MainFrame {
+    val crawList = List("Allegro", "Olx", "Gumtree")
+
     title = "Price Actual"
     minimumSize = new Dimension(900, 600)
 
-    val cboxAllegro   = new CheckBox("Allegro")
-    val cboxGumtree   = new CheckBox("Gumtree")
-    val cboxOlx       = new CheckBox("Olx")
+    val cboxAllegro   = new CheckBox("Allegro") {
+      selected = true
+    }
+    val cboxGumtree   = new CheckBox("Gumtree") {
+      selected = true
+    }
+    val cboxOlx       = new CheckBox("Olx") {
+      selected = true
+    }
+    val txtSearchProd = new TextField
+    val btnSearchProd = new Button("Product")
+    val btnSearchDesc = new Button("Description")
+    val mdlProds      = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Sklep", "Nazwa", "Cena") ) {
+      override def isCellEditable(r: Int, c: Int): Boolean = false
+    }
 
-    val btnFind       = new Button("Find")
-    val btnChoose     = new Button("Choose")
-    val txtsearchTerm = new TextField
-    val tblProd = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Sklep", "Nazwa", "Cena") )
-    val productsList = new Table(25, 3) {
-      import javax.swing.table._
+    val tblProds      = new Table(25, 3) {
       rowHeight = 25
       autoResizeMode = Table.AutoResizeMode.NextColumn
       showGrid = true
       gridColor = new java.awt.Color(150, 150, 150)
-      model = tblProd
-
-      peer.setRowSorter(new TableRowSorter(model))
+      model = mdlProds
+      //http://stackoverflow.com/questions/9588765/using-tablerowsorter-with-scala-swing-table
+      //peer.setRowSorter(new TableRowSorter(model))
     }
-    val status = new Label(" ")
-    val editorpane = new EditorPane {
+    val edtDesc       = new EditorPane {
       import javax.swing.border._
       border = new EtchedBorder(EtchedBorder.LOWERED)
       editable = false
     }
+    val txtStatus     = new Label(" ")
+
 
     contents = new BoxPanel(orientation = Vertical) {
       border = EmptyBorder(top = 5, left = 5, bottom = 5, right = 5)
@@ -65,55 +75,72 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
             maximumSize = new Dimension(640, 30)
             border = EmptyBorder(top = 5, left = 0, bottom = 5, right = 0)
             contents += new BoxPanel(orientation = Horizontal) {
-              contents += txtsearchTerm
+              contents += txtSearchProd
             }
             contents += new BorderPanel {
-              add(btnFind, BorderPanel.Position.Center)
+              add(btnSearchProd, BorderPanel.Position.Center)
             }
           }
 
-          contents += new ScrollPane(productsList)
+          contents += new ScrollPane(tblProds)
           contents += new BorderPanel {
             maximumSize = new Dimension(640, 30)
-            add(btnChoose, BorderPanel.Position.Center)
+            add(btnSearchDesc, BorderPanel.Position.Center)
           }
         }
-        contents += new ScrollPane(editorpane)
+        contents += new ScrollPane(edtDesc)
       }
-      contents += status
+      contents += txtStatus
     }
 
-    def displayCom(s: String) = {
-      status.text = s
+    def dspStatus(s: String) = {
+      txtStatus.text = s
     }
-    
+
     val eventScheduler = SchedulerEx.SwingEventThreadScheduler
 
-    val crawList = List("Allegro", "Olx", "Gumtree")
+    val obsCboxAll: Observable[(String, Boolean)] = cboxAllegro.stateValues.observeOn(eventScheduler).map(("Allegro", _))
+    val obsCboxGum: Observable[(String, Boolean)] = cboxGumtree.stateValues.observeOn(eventScheduler).map(("Gumtree", _))
+    val obsCboxOlx: Observable[(String, Boolean)] = cboxOlx.stateValues.observeOn(eventScheduler).map(("Olx", _))
+    val cboxObs:    Observable[(String, Boolean)] = obsCboxAll.merge(obsCboxGum).merge(obsCboxOlx)
+
+    cboxObs.subscribe( _ match {
+      case (name, true)   => createCrawler(name)
+      case (name, false)  => removeCrawler(name)
+    })
+
+    val obsSearchProd: Observable[String] = btnSearchProd.clicks.observeOn(eventScheduler).map(
+        _ => txtSearchProd.text)
+
+    val obsSearchDesc: Observable[(String, String)] = btnSearchDesc.clicks.observeOn(eventScheduler).filter(_
+      => tblProds.peer.getSelectedRowCount == 1).map(_
+      => (mdlProds.getValueAt(tblProds.peer.getSelectedRow, 0).toString, mdlProds.getValueAt(tblProds.peer.getSelectedRow, 2).toString))
 
     crawList foreach {
       crawler => createCrawler(crawler) onComplete {
-        case Success(true)    => displayCom(crawler + " has been added.")
-        case Success(false)   => displayCom(crawler + " has not been found.")
-        case Failure(err)     => displayCom("createCrawler error: " + err.getMessage)
+        case Success(true)    => dspStatus(crawler + " has been added.")
+        case Success(false)   => dspStatus(crawler + " has not been found.")
+        case Failure(err)     => dspStatus("createCrawler error: " + err.getMessage)
       }
     }
 
-    val obs: Observable[String] = btnFind.clicks.observeOn(eventScheduler).map(
-        _ => txtsearchTerm.text)
-
-    val cboxObs: Observable[Boolean] = cboxAllegro.stateValues.observeOn(eventScheduler)
-    cboxObs.subscribe(
-      v => println("value: " + v)
-    )
-
-    obs.subscribe(
+    obsSearchProd.subscribe(
       n => getPrices(n) onComplete {
         case Success(results)   =>
-          if(tblProd.getRowCount > 0) tblProd.setRowCount(0)
+          if(mdlProds.getRowCount > 0) mdlProds.setRowCount(0)
           results.sortBy(_._2).foreach{ res =>
-            tblProd.addRow(Array[AnyRef](res._1, n ,res._2.toString()))}
-        case Failure(err) => displayCom("getPrices error: " + err.getMessage)
+            mdlProds.addRow(Array[AnyRef](res._1, n ,res._2.toString()))}
+        case Failure(err) => dspStatus("getPrices error: " + err.getMessage)
+      }
+    )
+
+    obsSearchDesc.subscribe(
+      n => getDescription(n._1, n._2) onComplete {
+        case Success(desc)  =>
+          edtDesc.text = desc
+        case Failure(err)   =>
+          edtDesc.text =
+            "Error: " + err.getMessage
       }
     )
   }
