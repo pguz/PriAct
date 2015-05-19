@@ -31,7 +31,7 @@ object DispatcherProtocol {
     extends DispatcherResponse
   case object CrawlerNotFound
     extends DispatcherResponse
-  case class SendPrices(crawName: String, prices: List[Double])
+  case class SendPrices(crawName: String, info: List[(String, String, Double)])
     extends DispatcherResponse
   case class SendListPrices(prices: List[SendPrices])
     extends DispatcherResponse
@@ -57,10 +57,10 @@ class DispatcherActor extends Actor with ActorLogging {
       => crawlerRemoval(crawName)
 
     case GetPrices(prod)
-      => priceGetter(prod)
+      => priceProcess(prod)
 
     case GetDescription(shop, id)
-      => descriptionGetter(shop, id)
+      => descProcess(shop, id)
 
     case _
       => sender() ! NoSuchMessage
@@ -95,7 +95,7 @@ class DispatcherActor extends Actor with ActorLogging {
     }
   }
 
-  def priceGetter(prod: String): Unit = {
+  def priceProcess(prod: String): Unit = {
     log.info(s"GetPrices: $prod")
 
     val reqSender = sender // inaczej nie dziala, wspolbieznie moze byc niebezpiecznie.
@@ -112,7 +112,7 @@ class DispatcherActor extends Actor with ActorLogging {
     }
   }
 
-  def descriptionGetter(shop: String, id: String): Unit = {
+  def descProcess(shop: String, id: String): Unit = {
     log.info(s"GetDesc: $id from $shop")
 
     val reqSender = sender

@@ -40,9 +40,10 @@ trait ClientActorApi {
     })
   }
 
-  def getPrices(product: String): Future[List[(String, Double)]] = {
+  def getPrices(product: String): Future[List[(String, String, String, Double)]] = {
     val f = dispatcherActor ? GetPrices(product)
-    f.mapTo[SendListPrices].map{case SendListPrices(x) => x.flatMap(y => y.prices.map((y.crawName, _)))}
+    f.mapTo[SendListPrices].map{case SendListPrices(x)
+      => x.flatMap(y => y.info.map{case (id, name, price) => (y.crawName, id, name, price)})}
   }
 
   def getDescription(shop: String, id: String): Future[String] = {

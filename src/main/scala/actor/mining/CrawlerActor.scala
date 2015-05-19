@@ -16,7 +16,7 @@ object CrawlerProtocol {
   sealed trait CrawlerResponse
   case object NoSuchMessage
     extends CrawlerResponse
-  case class SendPrices(prices: List[Double])
+  case class SendPrices(prices: List[(String, String, Double)])
     extends CrawlerResponse
   case class SendDescription(desc: String)
     extends CrawlerResponse
@@ -31,21 +31,21 @@ abstract class CrawlerActor extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case GetPrices(prod)
-      => priceGetter(prod)
+      => priceProcess(prod)
     case GetDescription(id)
-      => descriptionGetter(id)
+      => descriptionProcess(id)
     case ByeRequest
       => bye()
     case _
       => sender() ! NoSuchMessage
   }
 
-  def priceGetter(prod: String): Unit = {
+  def priceProcess(prod: String): Unit = {
     log.debug("GetPrices: " + prod)
-    sender() ! SendPrices(getPrices(prod).map(_.toDouble))
+    sender() ! SendPrices(getPrices(prod))
   }
 
-  def descriptionGetter(id: String): Unit = {
+  def descriptionProcess(id: String): Unit = {
     log.debug("GetDesc: " + id)
     sender() ! SendDescription(getDescription(id))
   }
@@ -55,7 +55,7 @@ abstract class CrawlerActor extends Actor with ActorLogging {
     context.stop(self)
   }
 
-  def getPrices(product: String): List[String]
+  def getPrices(product: String): List[(String, String, Double)]
   def getDescription(id: String): String
 }
 

@@ -30,11 +30,11 @@ class AllegroActor extends CrawlerActor {
   import scala.util.control.Breaks._
   import scala.collection.mutable.ListBuffer
 
-  override def getPrices(product: String): List[String]= {
+  override def getPrices(product: String): List[(String, String, Double)]= {
     println("AllegroActor: getPrices")
     val contentList: ListBuffer[Document] = ListBuffer()
 
-    val list: ListBuffer[String] = ListBuffer()
+    val list: ListBuffer[(String, String, Double)] = ListBuffer()
 
     var page = 1
     breakable {
@@ -47,10 +47,10 @@ class AllegroActor extends CrawlerActor {
       }
     }
 
-    contentList.foreach(processPage(list, _))
+    contentList.foldLeft(list)((l, d) => l ++= processPage(d))
     println("wczytalem produktow: " + list.size + " z rozpoznanych stron: " + contentList.size)
 
-    list.reverse.sorted.map(_.replace(",",".")).toList
+    list.reverse.sorted.toList
   }
 
   def hasContentToProcess(preparedDoc: Document): Boolean = {
@@ -64,23 +64,19 @@ class AllegroActor extends CrawlerActor {
     }
   }
 
-  def processPage(priceList: ListBuffer[String], doc: Document): Unit = {
+  def processPage(doc: Document): ListBuffer[(String, String, Double)] = {
     val iteration = doc.body().getElementsByClass(iterableClass)
     val productList: java.util.Iterator[Element] = iteration.iterator()
-
+    val pageList = scala.collection.mutable.ListBuffer.empty[(String, String, Double)]
     while(productList.hasNext()) {
       val currentProduct = productList.next()
       val currentProductPrice = pricePattern.findFirstIn(currentProduct.getElementsByClass(priceClass).text().replaceAll(" ", "")).get
       val currentProductName = currentProduct.getElementsByClass("details").first().getElementsByTag("h2").text()
       val currentProductLink = "http://allegro.pl" + currentProduct.getElementsByClass("details").first().getElementsByTag("a").first().attr("href")
 
-      println(currentProductPrice);
-      println(currentProductName)
-      println(currentProductLink)
-      println()
-
-      priceList.append(currentProductPrice)
+      pageList += ((currentProductLink, currentProductName, currentProductPrice.replace(",",".").toDouble))
     }
+    pageList
   }
 
   override def getDescription(id: String): String = s"Allegro $id: MOCK"

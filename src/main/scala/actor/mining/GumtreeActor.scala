@@ -29,9 +29,9 @@ object GumtreeActor {
 class GumtreeActor extends CrawlerActor {
   import GumtreeActor._
 
-  override def getPrices(product: String): List[String] = {
+  override def getPrices(product: String): List[(String, String, Double)] = {
     println("GumtreeActor: getPrices")
-    var list: List[String] = List()
+    var list: List[(String, String, Double)] = List()
 
     //malo funkcyjnie, wykorzystana javowa biblioteka Jsoup
     val doc = getSourceCode(product)
@@ -42,7 +42,7 @@ class GumtreeActor extends CrawlerActor {
       if(cur_price.children().size() > 0) {
         val ext_price = pricePattern.findFirstIn(cur_price.child(0).text().replaceAll(" ", ""))
         if(!ext_price.isEmpty) {
-          list = ext_price.get :: list
+          list = ("id", "nazwa", ext_price.get.replace(",",".").toDouble) :: list
         }
       }
     }

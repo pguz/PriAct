@@ -28,8 +28,8 @@ object OlxActor {
 class OlxActor extends CrawlerActor {
   import OlxActor._
 
-  override def getPrices(product: String): List[String] = {
-    var list: List[String] = List()
+  override def getPrices(product: String): List[(String, String, Double)] = {
+    var list: List[(String, String, Double)] = List()
     println("OlxActor: getPrices")
     //malo funkcyjnie, wykorzystana javowa biblioteka Jsoup
     val doc = getSourceCode(product)
@@ -40,11 +40,11 @@ class OlxActor extends CrawlerActor {
       if(cur_price.children().size() > 0) {
         val ext_price = pricePattern.findFirstIn(cur_price.child(0).text().replaceAll(" ", ""))
         if(!ext_price.isEmpty) {
-          list = ext_price.get :: list
+          list = ("id", "nazwa", ext_price.get.replace(",",".").toDouble) :: list
         }
       }
     }
-    list.reverse.map(_.replace(',','.'))
+    list.reverse
   }
 
   override def getDescription(id: String): String = s"Olx $id: MOCK"

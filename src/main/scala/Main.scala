@@ -39,16 +39,20 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     val txtSearchProd = new TextField
     val btnSearchProd = new Button("Product")
     val btnSearchDesc = new Button("Description")
-    val mdlProds      = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Sklep", "Nazwa", "Cena") ) {
+    val mdlProds      = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Sklep", "Id", "Nazwa", "Cena") ) {
       override def isCellEditable(r: Int, c: Int): Boolean = false
     }
 
-    val tblProds      = new Table(25, 3) {
+    val tblProds      = new Table(25, 4) {
       rowHeight = 25
       autoResizeMode = Table.AutoResizeMode.NextColumn
       showGrid = true
       gridColor = new java.awt.Color(150, 150, 150)
       model = mdlProds
+      val colId = peer.getColumn("Id")
+      colId.setMinWidth(0)
+      colId.setPreferredWidth(0)
+      colId.setMaxWidth(0)
       //http://stackoverflow.com/questions/9588765/using-tablerowsorter-with-scala-swing-table
       //peer.setRowSorter(new TableRowSorter(model))
     }
@@ -114,7 +118,7 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
 
     val obsSearchDesc: Observable[(String, String)] = btnSearchDesc.clicks.observeOn(eventScheduler).filter(_
       => tblProds.peer.getSelectedRowCount == 1).map(_
-      => (mdlProds.getValueAt(tblProds.peer.getSelectedRow, 0).toString, mdlProds.getValueAt(tblProds.peer.getSelectedRow, 2).toString))
+      => (mdlProds.getValueAt(tblProds.peer.getSelectedRow, 0).toString, mdlProds.getValueAt(tblProds.peer.getSelectedRow, 1).toString))
 
     crawList foreach {
       crawler => createCrawler(crawler) onComplete {
@@ -128,8 +132,8 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
       n => getPrices(n) onComplete {
         case Success(results)   =>
           if(mdlProds.getRowCount > 0) mdlProds.setRowCount(0)
-          results.sortBy(_._2).foreach{ res =>
-            mdlProds.addRow(Array[AnyRef](res._1, n ,res._2.toString()))}
+          results.sortBy(_._4).foreach{ res =>
+            mdlProds.addRow(Array[AnyRef](res._1, res._2, res._3, res._4.toString()))}
         case Failure(err) => dspStatus("getPrices error: " + err.getMessage)
       }
     )
