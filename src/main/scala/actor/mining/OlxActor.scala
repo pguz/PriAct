@@ -25,7 +25,7 @@ object OlxActor {
     // search[order]=created_at%3Adesc - sortuje od najnowszych
     // view=list -> widok listy; galleryWide - galeria 1; galleryBig - galeria typ 2
     // TODO: warunek stopu dla pętli pobierania - sprawdzenie czy to co dostajemy ma w adresie q-$product
-    println("getting product " + product + ", page " + page)
+    println("OlxActor: getSourceCode, search product " + product + ", page " + page)
     Jsoup.connect(s"http://olx.pl/oferty/q-$product/?page=$page").get()
   }
 }
@@ -35,6 +35,7 @@ class OlxActor extends CrawlerActor {
   import OlxActor._
 
   override def getPrices(product: String): List[(String, String, Double)] = {
+    println("OlxActor: getPrices")
     val contentList: ListBuffer[Document] = ListBuffer()
 
     val list: ListBuffer[(String, String, Double)] = ListBuffer()
