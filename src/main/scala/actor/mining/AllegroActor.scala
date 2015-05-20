@@ -20,7 +20,7 @@ object AllegroActor  {
     // offerTypeBuyNow=1 -> tylko kup teraz
     //TODO: warunek stopu dla pętli pobierania: sprawdzenie czy na stronie wynikowej mamy komunikat zawarty wyżej
     println("getting product " + product + ", page " + page)
-    Jsoup.connect(s"http://allegro.pl/listing/listing.php?bmatch=seng-ps-mp-p-sm-isqm-2-e-0402&order=p&description=1&limit=60&string=$product&p=$page&offerTypeBuyNow=1").get()
+    Jsoup.connect(s"http://allegro.pl/listing/listing.php?bmatch=seng-ps-mp-p-sm-isqm-2-e-0402&order=p&description=1&limit=180&string=$product&p=$page&offerTypeBuyNow=1").get()
   }
 }
 
