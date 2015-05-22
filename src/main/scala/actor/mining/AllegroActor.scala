@@ -19,7 +19,7 @@ object AllegroActor  {
     // string=asd wyszukiwany tekst
     // offerTypeBuyNow=1 -> tylko kup teraz
     //TODO: warunek stopu dla pętli pobierania: sprawdzenie czy na stronie wynikowej mamy komunikat zawarty wyżej
-    println("AllegroActor: getSourceCode, search product " + product + ", page " + page)
+    //println("AllegroActor: getSourceCode, search product " + product + ", page " + page)
     Jsoup.connect(s"http://allegro.pl/listing/listing.php?bmatch=seng-ps-mp-p-sm-isqm-2-e-0402&order=p&description=0&limit=180&string=$product&p=$page&offerTypeBuyNow=1").get()
   }
 }
@@ -40,26 +40,25 @@ class AllegroActor extends CrawlerActor {
     breakable {
       while(true) {
         val pageSource = getSourceCode(product, page)
-        println("got page " + page)
-        if(!hasContentToProcess(pageSource)) break
+        if(!hasContentToProcess(pageSource, page)) break
         else contentList.append(pageSource)
+        println("AllegroActor: got result page " + page)
         page = page + 1
       }
     }
 
     contentList.foldLeft(list)((l, d) => l ++= processPage(d))
-    println("wczytalem produktow: " + list.size + " z rozpoznanych stron: " + contentList.size)
+    println("AllegroActor: got products: " + list.size + " from processed pages: " + contentList.size)
 
     list.reverse.sorted.toList
   }
 
-  def hasContentToProcess(preparedDoc: Document): Boolean = {
+  def hasContentToProcess(preparedDoc: Document, pageNumber: Integer): Boolean = {
     val hasContent = preparedDoc.body().getElementsByClass(iterableClass).size()>0
     if(hasContent) {
-      println("processing, has content")
       return true
     } else {
-      println("not processing, has no content")
+      println(s"AllegroActor: search on page $pageNumber seems to return no results")
       return false
     }
   }
