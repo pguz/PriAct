@@ -10,6 +10,7 @@ object AllegroActor  {
   val pricePattern = new Regex("""\d+,\d{2}?""")
   val priceClass = "price"
   val iterableClass = "excerpt"
+  val descriptionId = "user_field"
 
   def getSourceCode(product: String, page: Integer): Document = {
     // Allegro parametry GET'a
@@ -18,7 +19,7 @@ object AllegroActor  {
     // limit=180 -> limit ilosci wpisow na strone - dostepne 60, 120, 180, inna wartosc wyswietli 60
     // string=asd wyszukiwany tekst
     // offerTypeBuyNow=1 -> tylko kup teraz
-    //TODO: warunek stopu dla pętli pobierania: sprawdzenie czy na stronie wynikowej mamy komunikat zawarty wyżej
+    //warunek stopu dla pętli pobierania: sprawdzenie czy na stronie wynikowej mamy komunikat zawarty wyżej
     //println("AllegroActor: getSourceCode, search product " + product + ", page " + page)
     Jsoup.connect(s"http://allegro.pl/listing/listing.php?bmatch=seng-ps-mp-p-sm-isqm-2-e-0402&order=p&description=0&limit=180&string=$product&p=$page&offerTypeBuyNow=1").get()
   }
@@ -78,7 +79,11 @@ class AllegroActor extends CrawlerActor {
     pageList
   }
 
-  override def getDescription(id: String): String = s"Allegro $id: MOCK"
+  override def getDescription(id: String): String = {
+    val pageContent = Jsoup.connect(id).get().getElementById(descriptionId)
+    if(pageContent != null) return pageContent.text()
+    else return "Zobacz na " + id
+  }
 }
 
 class AllegroActorRef(override val actorRef: ActorRef, override val name: String)

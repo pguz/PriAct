@@ -2,3 +2,4 @@ target/
 PriAct.iml
 .*
 *.db
+.idea/uiDesigner.xml

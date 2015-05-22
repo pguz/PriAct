@@ -14,6 +14,7 @@ object OlxActor {
   val priceClass = "price"
   val iterableClass = "offer"
   val normalOfferTable = "offers_table"
+  val descriptionId = "textContent"
 
   def getSourceCode(product: String, page: Integer): Document = {
     // Olx parametry GETa
@@ -24,7 +25,7 @@ object OlxActor {
     // search[order]=filter_float_price%3Adesc - sortuje od najdrozszych
     // search[order]=created_at%3Adesc - sortuje od najnowszych
     // view=list -> widok listy; galleryWide - galeria 1; galleryBig - galeria typ 2
-    // TODO: warunek stopu dla pętli pobierania - sprawdzenie czy to co dostajemy ma w adresie q-$product
+    // warunek stopu dla pętli pobierania - sprawdzenie czy to co dostajemy ma w adresie q-$product
     //println("OlxActor: getSourceCode, search product " + product + ", page " + page)
     Jsoup.connect(s"http://olx.pl/oferty/q-$product/?page=$page").get()
   }
@@ -105,7 +106,11 @@ class OlxActor extends CrawlerActor {
     pageList
   }
 
-  override def getDescription(id: String): String = s"Olx $id: MOCK"
+  override def getDescription(id: String): String = {
+    val pageContent = Jsoup.connect(id).get().getElementById(descriptionId)
+    if(pageContent != null) return pageContent.text()
+    else return "Zobacz na " + id
+  }
 }
 
 class OlxActorRef(override val actorRef: ActorRef, override val name: String)

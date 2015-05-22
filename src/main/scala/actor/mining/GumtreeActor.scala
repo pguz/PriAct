@@ -3,7 +3,6 @@ package actor.mining
 import akka.actor.ActorRef
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
-import org.jsoup.select.Elements
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.Breaks._
@@ -17,7 +16,7 @@ object GumtreeActor {
   val iterableClass = "resultsTableSB"
   val titleClass = "ar-title"
   val linkClass = "adLinkSB"
-  var lastProcessedContent = new Elements()
+  val descriptionId = "ad-desc"
 
   def getSourceCode(product: String, page: Integer): Document = {
     // Gumtree parametry GET'a
@@ -27,7 +26,7 @@ object GumtreeActor {
     // gallery=false -> false - widok listy; true - widok galerii
     // Page=1 numer strony z wynikami -> podanie wiekszego numeru strony niz ostatni (np. 4 gdzie mamy 1-3) powoduje wyswietlenie ostatniej strony wynikow (czyli np. 3)
     //TODO: parsowanie tytułów bo gumtree sprawdza zarówno w opisie i tytule
-    //TODO: warunek stopu pętli pobierania - sprawdzenie czy kolejna strona zwraca taką samą treść jak poprzednia
+    //warunek stopu pętli pobierania - sprawdzenie czy kolejna strona zwraca taką samą treść jak poprzednia
     //println("GumtreeActor: getSourceCode, search product " + product + ", page " + page)
     Jsoup.connect(s"http://www.gumtree.pl/fp-$product?Page=$page").get()
   }
@@ -109,7 +108,11 @@ class GumtreeActor extends CrawlerActor {
     pageList
   }
 
-  override def getDescription(id: String): String = s"Gumtree $id: MOCK"
+  override def getDescription(id: String): String = {
+    val pageContent = Jsoup.connect(id).get().getElementById(descriptionId)
+    if(pageContent != null) return pageContent.text()
+    else return "Zobacz na " + id
+  }
 }
 
 class GumtreeActorRef(override val actorRef: ActorRef, override val name: String)

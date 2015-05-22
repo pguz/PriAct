@@ -53,6 +53,14 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
       colId.setMinWidth(0)
       colId.setPreferredWidth(0)
       colId.setMaxWidth(0)
+      val colShop = peer.getColumn("Sklep")
+      colShop.setMinWidth(60)
+      colShop.setPreferredWidth(60)
+      colShop.setMaxWidth(60)
+      val colPrice = peer.getColumn("Cena")
+      colPrice.setMinWidth(60)
+      colPrice.setPreferredWidth(60)
+      colPrice.setMaxWidth(60)
       //http://stackoverflow.com/questions/9588765/using-tablerowsorter-with-scala-swing-table
       //peer.setRowSorter(new TableRowSorter(model))
     }
