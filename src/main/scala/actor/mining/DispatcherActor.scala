@@ -35,6 +35,8 @@ object DispatcherProtocol {
     extends DispatcherResponse
   case class SendListPrices(prices: List[SendPrices])
     extends DispatcherResponse
+  case class SendRequestContentAndPrices(request: String, prices: List[SendPrices])
+    extends DispatcherResponse
   case class SendDescription(desc: String)
     extends DispatcherResponse
 }
@@ -104,7 +106,7 @@ class DispatcherActor extends Actor with ActorLogging {
       case Success(x) => {
         log.debug("GetPrices with success")
         reqSender ! SendListPrices(x)
-        dbActor ! SendListPrices(x)
+        dbActor ! SendRequestContentAndPrices(prod, x)
         log.debug("Sent prices to DB")
       }
       case Failure(err) => {
