@@ -39,7 +39,8 @@ class DBActor extends Actor{
       db.withSession { implicit session =>
         prices.foreach(e1 =>
           e1.info.foreach(e => {
-            val prodId = (product returning product.map(_.id)) +=(0, e._2, e._1)
+            val prodId = (product returning product.map(_.id)) += (0, e._2, e._1)
+//            val reqId = (request returning request.map(_.id)) +=
             price += (1, prodId, e._3)
           }
           ))
