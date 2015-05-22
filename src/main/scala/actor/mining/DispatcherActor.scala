@@ -57,7 +57,7 @@ class DispatcherActor extends Actor with ActorLogging {
       => crawlerRemoval(crawName)
 
     case GetPrices(prod)
-      => priceProcess(prod)
+      => savePrices(prod)
 
     case GetDescription(shop, id)
       => descProcess(shop, id)
@@ -95,7 +95,7 @@ class DispatcherActor extends Actor with ActorLogging {
     }
   }
 
-  def priceProcess(prod: String): Unit = {
+  def savePrices(prod: String): Unit = {
     log.info(s"GetPrices: $prod")
 
     val reqSender = sender // inaczej nie dziala, wspolbieznie moze byc niebezpiecznie. Ojoj :'(
@@ -104,6 +104,8 @@ class DispatcherActor extends Actor with ActorLogging {
       case Success(x) => {
         log.debug("GetPrices with success")
         reqSender ! SendListPrices(x)
+        dbActor ! SendListPrices(x)
+        log.debug("Sent prices to DB")
       }
       case Failure(err) => {
         log.debug("GetPrices with error: " + err.getMessage)

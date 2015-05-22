@@ -7,8 +7,7 @@ package actor.db
 import java.sql.Timestamp
 import java.util.Calendar
 
-import actor.mining.CrawlerProtocol
-import actor.processing.PriceProcessingActor
+import actor.mining.{DispatcherProtocol, CrawlerProtocol}
 import akka.actor.Actor
 import akka.actor.Actor.Receive
 import akka.event.Logging
@@ -22,15 +21,24 @@ class DBActor extends Actor{
   val request: TableQuery[Request] = TableQuery[Request]
   val product: TableQuery[Product] = TableQuery[Product]
 
+
   val db = Database.forURL("jdbc:h2:pricesDB", driver = "org.h2.Driver")
+  db.withSession { implicit  session =>
+    (product.ddl ++ price.ddl ++ request.ddl).create
+  }
 
   type PriceDetails = (String, String, String, Double)
   override def receive: Receive = {
-    case CrawlerProtocol.SendPrices(prices) => log.debug("Received prices: " + prices.toString())
-      prices.foreach( e =>
-        product += (1, e._2, e._1))
-      product foreach { case (id, name, url) =>
-      println("  " + id + "\t" + name + "\t" + url)}
+    case DispatcherProtocol.SendListPrices(prices) => log.debug("Received prices!")
+      db.withSession { implicit session =>
+        prices.foreach(e1 =>
+          e1.info.foreach(e =>
+          product +=(1, e._2, e._1)))
+        product foreach { case (id, name, url) =>
+          println("  " + id + "\t" + name + "\t" + url)
+        }
+      }
+      log.debug("Insert into DB complete!")
   }
 }
 

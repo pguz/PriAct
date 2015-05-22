@@ -31,7 +31,7 @@ class Product(tag: Tag)
 }
 
 class Price(tag: Tag)
-  extends Table[(Int, String, String, Double, java.sql.Timestamp)](tag, "PRICE") {
+  extends Table[(Int, Int, Double)](tag, "PRICE") {
 
 
   def reqId: Column[Int] = column[Int]("REQUEST_ID")
