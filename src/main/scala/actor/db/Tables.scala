@@ -38,9 +38,9 @@ class Price(tag: Tag)
   def prodId: Column[Int] = column[Int]("PRODUCT_ID")
   def value: Column[Double] = column[Double]("VALUE")
 
-  def fk1 = foreignKey("SUP_FK", reqId, TableQuery[Request])(_.id)
+//  def fk1 = foreignKey("SUP_FK", reqId, TableQuery[Request])(_.id)
   def fk2 = foreignKey("PROD_FK", prodId, TableQuery[Product])(_.id)
-  def pk = primaryKey("PRICE_PK", (reqId, prodId))
+  //def pk = primaryKey("PRICE_PK", (reqId, prodId))
   // Every table needs a * projection with the same type as the table's type parameter
   def * : ProvenShape[(Int, Int, Double)] =
     (reqId, prodId, value)
