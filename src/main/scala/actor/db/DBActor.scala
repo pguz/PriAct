@@ -7,30 +7,31 @@ package actor.db
 import java.sql.Timestamp
 import java.util.Calendar
 
-import actor.db.DBActor.InsertPrices
+import actor.mining.CrawlerProtocol
 import actor.processing.PriceProcessingActor
-import actor.processing.PriceProcessingActor.ProcessedPrices
 import akka.actor.Actor
 import akka.actor.Actor.Receive
+import akka.event.Logging
 
 import scala.slick.driver.H2Driver.simple._
-object DBActor{
-  case class InsertPrices(ps: ProcessedPrices)
-}
-class DBActor extends Actor{
 
-  // The query interface for the Suppliers table
-  val prices: TableQuery[PricesData] = TableQuery[PricesData]
+class DBActor extends Actor{
+  val log = Logging(context.system, this)
+
+  val price: TableQuery[Price] = TableQuery[Price]
+  val request: TableQuery[Request] = TableQuery[Request]
+  val product: TableQuery[Product] = TableQuery[Product]
 
   val db = Database.forURL("jdbc:h2:pricesDB", driver = "org.h2.Driver")
 
   type PriceDetails = (String, String, String, Double)
   override def receive: Receive = {
-    case InsertPrices(ps) =>
-      println("Inserting into DB!")
-      db.withSession { implicit session => prices.ddl.create
-        ps.processedPrices.foreach((p: PriceDetails) =>
-          prices += (1, "3", "4", 5, new Timestamp(System.currentTimeMillis())))
-      }
+    case CrawlerProtocol.SendPrices(prices) => log.debug("Received prices: " + prices.toString())
+      prices.foreach( e =>
+        product += (1, e._2, e._1))
+      product foreach { case (id, name, url) =>
+      println("  " + id + "\t" + name + "\t" + url)}
   }
 }
+
+//url: String, name: String, value: Double)
