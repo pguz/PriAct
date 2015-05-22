@@ -43,13 +43,17 @@ class OlxActor extends CrawlerActor {
 
     if(product.length < 0) return list.toList
 
+    println("OlxActor: got max result page " + getMaxPageResult(getSourceCode(product, 1)))
+
     var page = 1
+    val endPage = getMaxPageResult(getSourceCode(product, 1))
     breakable {
       while(true) {
         val pageSource = getSourceCode(product, page)
         if(!hasContentToProcess(pageSource, product, page)) break
         else contentList.append(pageSource)
         println("OlxActor: got result page " + page)
+        if (page == endPage) break
         page = page + 1
       }
     }
@@ -61,13 +65,6 @@ class OlxActor extends CrawlerActor {
   }
 
   def hasContentToProcess(preparedDoc: Document, product: String, pageNumber: Integer): Boolean = {
-    val docLocation = preparedDoc.location()
-    println("OlxActor: hasContentToProcess for " + docLocation)
-    if(!(docLocation.contains(product.toLowerCase.replaceAll(" ", "-"))
-      || docLocation.contains(product.toLowerCase.replaceAll(" ", "%20")))) {
-      return false
-    }
-
     if(preparedDoc.body().getElementsByClass("emptynew").size() > 0) {
       println(s"OlxActor: search on page $pageNumber seems to return no results")
       return false
@@ -79,6 +76,13 @@ class OlxActor extends CrawlerActor {
     } else {
       return false
     }
+  }
+
+  def getMaxPageResult(preparedDoc: Document): Integer = {
+    val potentialMaxPageNumber = preparedDoc.select(".block.br3.brc8.large.tdnone.lheight24")
+    println("getMaxPageResult: " + potentialMaxPageNumber.last().text())
+    if(potentialMaxPageNumber.size()==0) return 1
+    else return potentialMaxPageNumber.last().text().toInt
   }
 
   def processPage(doc: Document): ListBuffer[(String, String, Double)] = {

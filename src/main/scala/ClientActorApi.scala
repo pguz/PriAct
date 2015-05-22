@@ -13,7 +13,7 @@ import com.typesafe.config.ConfigFactory
 trait ClientActorApi {
   import actor.mining.DispatcherProtocol._
 
-  implicit val timeout: Timeout = Timeout(16 seconds)
+  implicit val timeout: Timeout = Timeout(30 seconds)
   val system = ActorSystem("PriAct", akkaConfig)
   val dispatcherActor = system.actorOf(Props(classOf[DispatcherActor]), "dispatcher")
 
