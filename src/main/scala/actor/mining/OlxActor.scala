@@ -25,7 +25,7 @@ object OlxActor {
     // search[order]=created_at%3Adesc - sortuje od najnowszych
     // view=list -> widok listy; galleryWide - galeria 1; galleryBig - galeria typ 2
     // TODO: warunek stopu dla pętli pobierania - sprawdzenie czy to co dostajemy ma w adresie q-$product
-    println("OlxActor: getSourceCode, search product " + product + ", page " + page)
+    //println("OlxActor: getSourceCode, search product " + product + ", page " + page)
     Jsoup.connect(s"http://olx.pl/oferty/q-$product/?page=$page").get()
   }
 }
@@ -46,34 +46,36 @@ class OlxActor extends CrawlerActor {
     breakable {
       while(true) {
         val pageSource = getSourceCode(product, page)
-        println("got page " + page)
-        if(!hasContentToProcess(pageSource, product)) break
+        if(!hasContentToProcess(pageSource, product, page)) break
         else contentList.append(pageSource)
+        println("OlxActor: got result page " + page)
         page = page + 1
       }
     }
 
     contentList.foldLeft(list)((l, d) => l ++= processPage(d))
-    println("wczytalem produktow: " + list.size + " z rozpoznanych stron: " + contentList.size)
+    println("OlxActor: got products: " + list.size + " from processed pages: " + contentList.size)
 
     list.reverse.sorted.toList
   }
 
-  def hasContentToProcess(preparedDoc: Document, product: String): Boolean = {
+  def hasContentToProcess(preparedDoc: Document, product: String, pageNumber: Integer): Boolean = {
     val docLocation = preparedDoc.location()
-    println("Processing address " + docLocation)
+    println("OlxActor: hasContentToProcess for " + docLocation)
     if(!(docLocation.contains(product.toLowerCase.replaceAll(" ", "-"))
       || docLocation.contains(product.toLowerCase.replaceAll(" ", "%20")))) {
-      println("not processing, has q-" + product + " in address")
+      return false
+    }
+
+    if(preparedDoc.body().getElementsByClass("emptynew").size() > 0) {
+      println(s"OlxActor: search on page $pageNumber seems to return no results")
       return false
     }
 
     val hasContent = preparedDoc.body().getElementsByClass(iterableClass).size()>0
     if(hasContent) {
-      println("processing, has content")
       return true
     } else {
-      println("not processing, has no content")
       return false
     }
   }
@@ -81,9 +83,11 @@ class OlxActor extends CrawlerActor {
   def processPage(doc: Document): ListBuffer[(String, String, Double)] = {
     // wzięcie ofert tylko z tabeli normalnych ofert, załatwia nam odfiltrowanie powtórzonych ofert wyróżnionych jednocześnie
     // nie wywalając ofert wyróżnionych
+    val pageList = scala.collection.mutable.ListBuffer.empty[(String, String, Double)]
+
     val iteration = doc.body().getElementById(normalOfferTable).getElementsByClass(iterableClass)
     val productList: java.util.Iterator[Element] = iteration.iterator()
-    val pageList = scala.collection.mutable.ListBuffer.empty[(String, String, Double)]
+
     while(productList.hasNext()) {
       val currentProduct = productList.next()
       if(currentProduct.getElementsByClass(priceClass).size()>0) {
@@ -93,6 +97,7 @@ class OlxActor extends CrawlerActor {
           val currentProductPrice = currentProductPriceOcc.get
           val currentProductName = currentProduct.getElementsByTag("h3").first().text()
           val currentProductLink = currentProduct.getElementsByTag("h3").first().getElementsByTag("a").first().attr("href").replaceAll(urlTrashPattern, "")
+
           pageList += ((currentProductLink, currentProductName, currentProductPrice.replace(",",".").toDouble))
         }
       }
