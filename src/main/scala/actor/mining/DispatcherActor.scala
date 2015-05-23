@@ -45,7 +45,7 @@ class DispatcherActor extends Actor with ActorLogging {
   import DispatcherProtocol._
 
   implicit val timeout: Timeout
-    = Timeout(50 seconds)
+    = Timeout(120 seconds)
   var dbActor
     = context.actorOf(Props[DBActor], name = "db")
   var crawList: List[CrawlerActorRef]

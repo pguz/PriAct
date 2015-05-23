@@ -44,12 +44,12 @@ class DBActor extends Actor{
             price += (reqId, prodId, e._3)
           }
           ))
-        product foreach { case (id, name, url) =>
-          println("  " + id + "\t" + name + "\t" + url)
-        }
-        price foreach { case (reqId, prodId, value) =>
-          println("  " + reqId + "\t" + prodId + "\t" + value)
-        }
+        //product foreach { case (id, name, url) =>
+        //  println("  " + id + "\t" + name + "\t" + url)
+        //}
+        //price foreach { case (reqId, prodId, value) =>
+        //  println("  " + reqId + "\t" + prodId + "\t" + value)
+        //}
       }
       log.debug("Insert into DB complete!")
   }

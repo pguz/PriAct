@@ -35,24 +35,28 @@ object OlxActor {
 class OlxActor extends CrawlerActor {
   import OlxActor._
 
-  override def getPrices(product: String): List[(String, String, Double)] = {
+  override def getPrices(productAndCategory: String): List[(String, String, Double)] = {
     println("OlxActor: getPrices")
+
+    val product = productAndCategory.split("\\?")(0)
+    var category = ""
+    if(productAndCategory.split("\\?").length > 1) {
+      category = productAndCategory.split("\\?")(1)
+    }
+
     val contentList: ListBuffer[Document] = ListBuffer()
 
     val list: ListBuffer[(String, String, Double)] = ListBuffer()
 
-    if(product.length < 0) return list.toList
-
-    println("OlxActor: got max result page " + getMaxPageResult(getSourceCode(product, 1)))
+    if(product.length < 1) return list.toList
 
     var page = 1
     val endPage = getMaxPageResult(getSourceCode(product, 1))
     breakable {
       while(true) {
         val pageSource = getSourceCode(product, page)
-        if(!hasContentToProcess(pageSource, product, page)) break
-        else contentList.append(pageSource)
-        println("OlxActor: got result page " + page)
+        if(hasContentToProcess(pageSource, product, page)) contentList.append(pageSource)
+        println("OlxActor: got result page " + page + " of " + endPage)
         if (page == endPage) break
         page = page + 1
       }
@@ -80,9 +84,14 @@ class OlxActor extends CrawlerActor {
 
   def getMaxPageResult(preparedDoc: Document): Integer = {
     val potentialMaxPageNumber = preparedDoc.select(".block.br3.brc8.large.tdnone.lheight24")
-    println("getMaxPageResult: " + potentialMaxPageNumber.last().text())
-    if(potentialMaxPageNumber.size()==0) return 1
-    else return potentialMaxPageNumber.last().text().toInt
+    if(potentialMaxPageNumber == null || potentialMaxPageNumber.size()==0) {
+      println("OlxActor: getMaxPageResult: 1")
+      return 1
+    }
+    else return {
+      println("OlxActor: getMaxPageResult: " + potentialMaxPageNumber.last().text())
+      potentialMaxPageNumber.last().text().toInt
+    }
   }
 
   def processPage(doc: Document): ListBuffer[(String, String, Double)] = {
