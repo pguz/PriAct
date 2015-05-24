@@ -1,6 +1,6 @@
 package actor.mining
 
-import akka.actor.{ActorRef}
+import akka.actor.ActorRef
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 
@@ -39,7 +39,7 @@ class OlxActor extends CrawlerActor {
     println("OlxActor: getPrices")
 
     val product = productAndCategory.split("\\?")(0)
-    var category = ""
+    var category: String = ""
     if(productAndCategory.split("\\?").length > 1) {
       category = productAndCategory.split("\\?")(1)
     }
@@ -62,7 +62,7 @@ class OlxActor extends CrawlerActor {
       }
     }
 
-    contentList.foldLeft(list)((l, d) => l ++= processPage(d))
+    contentList.foldLeft(list)((l, d) => l ++= processPage(d, category))
     println("OlxActor: got products: " + list.size + " from processed pages: " + contentList.size)
 
     list.reverse.sorted.toList
@@ -94,14 +94,14 @@ class OlxActor extends CrawlerActor {
     }
   }
 
-  def processPage(doc: Document): ListBuffer[(String, String, Double)] = {
+  def processPage(doc: Document, category: String): ListBuffer[(String, String, Double)] = {
     // wzięcie ofert tylko z tabeli normalnych ofert, załatwia nam odfiltrowanie powtórzonych ofert wyróżnionych jednocześnie
     // nie wywalając ofert wyróżnionych
     val pageList = scala.collection.mutable.ListBuffer.empty[(String, String, Double)]
 
     val iteration = doc.body().getElementById(normalOfferTable).getElementsByClass(iterableClass)
     val productList: java.util.Iterator[Element] = iteration.iterator()
-
+    var number = 0;
     while(productList.hasNext()) {
       val currentProduct = productList.next()
       if(currentProduct.getElementsByClass(priceClass).size()>0) {
@@ -112,11 +112,33 @@ class OlxActor extends CrawlerActor {
           val currentProductName = currentProduct.getElementsByTag("h3").first().text()
           val currentProductLink = currentProduct.getElementsByTag("h3").first().getElementsByTag("a").first().attr("href").replaceAll(urlTrashPattern, "")
 
-          pageList += ((currentProductLink, currentProductName, currentProductPrice.replace(",",".").toDouble))
+          if(preProcessProduct(currentProductLink, category)) {
+            pageList += ((currentProductLink, currentProductName, currentProductPrice.replace(",",".").toDouble))
+          }
         }
       }
     }
     pageList
+  }
+
+  def preProcessProduct(link: String, desiredCategory: String): Boolean = {
+    print("OlxActor: preProcessingProduct " + link)
+    if (desiredCategory==null || desiredCategory.length()==0) {
+      println(" ok")
+      return true
+    }
+    val doc = Jsoup.connect(link).get()
+    val categories = doc.select("#breadcrumbTop .inline")
+    val catIterator = categories.iterator()
+    while(catIterator.hasNext) {
+      val selectedCat = catIterator.next()
+      if(selectedCat.text.toLowerCase.contains(desiredCategory)) {
+        println(" ok")
+        return true
+      }
+    }
+    println(" failed")
+    return false
   }
 
   override def getDescription(id: String): String = {
