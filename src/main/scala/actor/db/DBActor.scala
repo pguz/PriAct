@@ -18,9 +18,9 @@ import scala.slick.jdbc.meta.MTable
 class DBActor extends Actor{
   val log = Logging(context.system, this)
 
-  val price: TableQuery[Price] = TableQuery[Price]
-  val request: TableQuery[Request] = TableQuery[Request]
-  val product: TableQuery[Product] = TableQuery[Product]
+  val price: TableQuery[Prices] = TableQuery[Prices]
+  val request: TableQuery[Queries] = TableQuery[Queries]
+  val product: TableQuery[Products] = TableQuery[Products]
 
 
   val db = Database.forURL("jdbc:h2:file:pricesDB", driver = "org.h2.Driver")
