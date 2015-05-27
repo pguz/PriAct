@@ -11,7 +11,6 @@ import scala.util.{Success, Failure}
 
 
 object DispatcherProtocol {
-  
   sealed trait DispatcherRequest
   case class CreateCrawler(name: String)
     extends DispatcherRequest
