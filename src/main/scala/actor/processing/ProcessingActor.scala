@@ -6,11 +6,8 @@ package actor.processing
 
 import java.sql.Timestamp
 
-import actor.db.{Products, Queries, Prices, DBActor}
-import actor.mining.{CrawlerProtocol}
-import actor.processing.ProcessingProtocol.RequestQueriesList
-import akka.actor.Actor.Receive
-import akka.actor.{Props, Actor}
+import actor.db.{Products, Queries, Prices}
+import akka.actor.{Actor}
 import akka.event.Logging
 
 import scala.slick.driver.H2Driver.simple._

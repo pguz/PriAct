@@ -1,7 +1,6 @@
 import observablex._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.swing._
-import scala.swing.event._
 import swing.Swing._
 import javax.swing.table.{DefaultTableModel}
 import javax.swing.UIManager
@@ -42,6 +41,7 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     val mdlProds      = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Sklep", "Id", "Nazwa", "Cena") ) {
       override def isCellEditable(r: Int, c: Int): Boolean = false
     }
+    val btnStats      = new Button("Statistics")
 
     val tblProds      = new Table(25, 4) {
       rowHeight = 25
@@ -102,6 +102,12 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
         }
         contents += new ScrollPane(edtDesc)
       }
+      contents += new BoxPanel(orientation = Vertical) {
+        border = EmptyBorder(top = 5, left = 5, bottom = 5, right = 5)
+        contents += new BorderPanel {
+          add(btnStats, BorderPanel.Position.Center)
+        }
+      }
       contents += txtStatus
     }
 
@@ -155,36 +161,12 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
             "Error: " + err.getMessage
       }
     )
+
+    btnStats.clicks.subscribe { _ =>
+      val statsFrame = new StatsFrame
+      statsFrame.pack
+      statsFrame.visible = true
+    }
   }
-
-
 }
 
-trait ConcreteSwingApi extends SwingApi {
-  type ValueChanged = scala.swing.event.ValueChanged
-  object ValueChanged {
-    def unapply(x: Event) = x match {
-      case vc: ValueChanged => Some(vc.source.asInstanceOf[TextField])
-      case _ => None
-    }
-  }
-  type ButtonClicked = scala.swing.event.ButtonClicked
-  object ButtonClicked {
-    def unapply(x: Event) = x match {
-      case bc: ButtonClicked => Some(bc.source.asInstanceOf[Button])
-      case _ => None
-    }
-  }
-
-  type StateChanged = scala.swing.event.ButtonClicked
-  object StateChanged {
-    def unapply(x: Event) = x match {
-      case sc: StateChanged => Some(sc.source.asInstanceOf[CheckBox])
-      case _ => None
-    }
-  }
-  
-  type TextField = scala.swing.TextField
-  type Button = scala.swing.Button
-  type CheckBox = scala.swing.CheckBox
-}
