@@ -82,7 +82,7 @@ class PriceProcessingActor extends Actor {
   def returnQueryResult(queryId: Int) = { log.debug(s"Returning result for query: $queryId")
     db.withSession { implicit session =>
       val pricesList = for {
-        price <- tPrices
+        price <- tPrices if price.queryId === queryId
       } yield (price.prodId, price.value)
       println("pricesList.list: " + pricesList.list)
       sender ! QueryResult(pricesList.list)
@@ -92,7 +92,7 @@ class PriceProcessingActor extends Actor {
   def returnQueryStats(queryId: Int) = { log.debug(s"Returning stats for query: $queryId")
     val queryResult = db.withSession { implicit session =>
       val pricesList = for {
-        price <- tPrices
+        price <- tPrices if price.queryId === queryId
       } yield (price.prodId, price.value)
       pricesList.list
     }

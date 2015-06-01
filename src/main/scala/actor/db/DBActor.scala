@@ -18,9 +18,9 @@ import scala.slick.jdbc.meta.MTable
 class DBActor extends Actor{
   val log = Logging(context.system, this)
 
-  val price: TableQuery[Prices] = TableQuery[Prices]
-  val request: TableQuery[Queries] = TableQuery[Queries]
-  val product: TableQuery[Products] = TableQuery[Products]
+  val tPrices: TableQuery[Prices] = TableQuery[Prices]
+  val tQueries: TableQuery[Queries] = TableQuery[Queries]
+  val tProducts: TableQuery[Products] = TableQuery[Products]
 
 
   val db = Database.forURL("jdbc:h2:file:pricesDB", driver = "org.h2.Driver")
@@ -30,18 +30,23 @@ class DBActor extends Actor{
   }
 
   db.withSession { implicit  session =>
-    createIfNotExists(request, product, price)
+    createIfNotExists(tQueries, tProducts, tPrices)
   }
 
-  type PriceDetails = (String, String, String, Double)
   override def receive: Receive = {
     case DispatcherProtocol.SendRequestContentAndPrices(req, prices) => log.debug("Received prices!")
       db.withSession { implicit session =>
-        val reqId = (request returning request.map(_.id)) += (0, req, new Timestamp(System.currentTimeMillis()))
+        val reqId = (tQueries returning tQueries.map(_.id)) += (0, req, new Timestamp(System.currentTimeMillis()))
         prices.foreach(e1 =>
           e1.info.foreach(e => {
-            val prodId = (product returning product.map(_.id)) += (0, e._2, e._1)
-            price += (reqId, prodId, e._3)
+            var prodId: Int = 0
+            if (!tProducts.filter(_.url === e._1).exists.run){
+              prodId = (tProducts returning tProducts.map(_.id)) += (0, e._2, e._1)
+            }
+            else {
+              prodId = tProducts.filter(_.url === e._1).firstOption.get._1
+            }
+            tPrices += (reqId, prodId, e._3)
           }
           ))
         //product foreach { case (id, name, url) =>
