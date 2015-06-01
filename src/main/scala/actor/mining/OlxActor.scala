@@ -26,7 +26,8 @@ object OlxActor {
     // search[order]=created_at%3Adesc - sortuje od najnowszych
     // view=list -> widok listy; galleryWide - galeria 1; galleryBig - galeria typ 2
     // warunek stopu dla pętli pobierania - sprawdzenie czy to co dostajemy ma w adresie q-$product
-    //println("OlxActor: getSourceCode, search product " + product + ", page " + page)
+    println("OlxActor: getSourceCode, search product " + product + ", page " + page)
+    println(s"OlxActor: http://olx.pl/oferty/q-$product/?page=$page")
     Jsoup.connect(s"http://olx.pl/oferty/q-$product/?page=$page").get()
   }
 }
@@ -51,7 +52,7 @@ class OlxActor extends CrawlerActor {
     if(product.length < 1) return list.toList
 
     var page = 1
-    val endPage = 10 //getMaxPageResult(getSourceCode(product, 1))
+    val endPage = getMaxPageResult(getSourceCode(product, 1))
     breakable {
       while(true) {
         val pageSource = getSourceCode(product, page)
