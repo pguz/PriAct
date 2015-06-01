@@ -163,6 +163,7 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     )
 
     btnStats.clicks.subscribe { _ =>
+      println("btnStats.clicks")
       val statsFrame = new StatsFrame
       statsFrame.pack
       statsFrame.visible = true

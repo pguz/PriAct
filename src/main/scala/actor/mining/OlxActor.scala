@@ -51,7 +51,7 @@ class OlxActor extends CrawlerActor {
     if(product.length < 1) return list.toList
 
     var page = 1
-    val endPage = getMaxPageResult(getSourceCode(product, 1))
+    val endPage = 10 //getMaxPageResult(getSourceCode(product, 1))
     breakable {
       while(true) {
         val pageSource = getSourceCode(product, page)

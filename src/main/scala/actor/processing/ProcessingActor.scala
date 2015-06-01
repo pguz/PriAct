@@ -26,9 +26,9 @@ object ProcessingProtocol {
 
 
   sealed trait ProcessingResponse
-  case class QueriesList(queriesIds: List[Int])
+  case class QueriesList(queriesIds: List[(Int, String, Timestamp)])
     extends ProcessingResponse
-  case class QueryResult(prices: List[(Int, Double)]) //prodId + price
+  case class QueryResult(prices: List[(Int, Double)]) //prodId, price
     extends ProcessingResponse
   case class QueryStats(min: Double, max: Double, avg: Double)
     extends ProcessingResponse
@@ -73,7 +73,7 @@ class PriceProcessingActor extends Actor {
     db.withSession { implicit session =>
       val requestsList = for {
         req <- tQueries if req.content like s"%$requestContent%"
-      } yield (req.id)
+      } yield (req.id, req.content, req.date)
 
       sender ! QueriesList(requestsList.list)
     }
@@ -82,9 +82,9 @@ class PriceProcessingActor extends Actor {
   def returnQueryResult(queryId: Int) = { log.debug(s"Returning result for query: $queryId")
     db.withSession { implicit session =>
       val pricesList = for {
-        price <- tPrices if price.queryId === queryId
+        price <- tPrices
       } yield (price.prodId, price.value)
-
+      println("pricesList.list: " + pricesList.list)
       sender ! QueryResult(pricesList.list)
     }
   }
@@ -92,7 +92,7 @@ class PriceProcessingActor extends Actor {
   def returnQueryStats(queryId: Int) = { log.debug(s"Returning stats for query: $queryId")
     val queryResult = db.withSession { implicit session =>
       val pricesList = for {
-        price <- tPrices if price.queryId === queryId
+        price <- tPrices
       } yield (price.prodId, price.value)
       pricesList.list
     }

@@ -1,4 +1,8 @@
+import java.sql.Timestamp
+
 import actor.mining.DispatcherActor
+import actor.processing.{ProcessingProtocol, PriceProcessingActor}
+import actor.processing.ProcessingProtocol.ProcessingRequest
 
 import akka.actor.{Props, ActorSystem}
 import akka.pattern.ask
@@ -16,6 +20,7 @@ trait ClientActorApi {
   implicit val timeout: Timeout = Timeout(120 seconds)
   val system = ActorSystem("PriAct", akkaConfig)
   val dispatcherActor = system.actorOf(Props(classOf[DispatcherActor]), "dispatcher")
+  val processingActor = system.actorOf(Props(classOf[PriceProcessingActor]), "processing")
 
   //przeniesc do configu
   def akkaConfig = ConfigFactory.parseString(s"""
@@ -49,5 +54,20 @@ trait ClientActorApi {
   def getDescription(shop: String, id: String): Future[String] = {
     val f = dispatcherActor ? GetDescription(shop, id)
     f.mapTo[SendDescription].map{case SendDescription(desc) => desc}
+  }
+
+  def fRequestQuriesList(content: String): Future[List[(Int, String, Timestamp)]] = {
+    val f = processingActor ? ProcessingProtocol.RequestQueriesList(content)
+    f.mapTo[ProcessingProtocol.QueriesList].map{case ProcessingProtocol.QueriesList(queriesIds) => queriesIds}
+  }
+
+  def fRequestQueryResult(queryId: Int): Future[List[(Int, Double)]] = {
+    val f = processingActor ? ProcessingProtocol.RequestQueryResult(queryId)
+    f.mapTo[ProcessingProtocol.QueryResult].map{case ProcessingProtocol.QueryResult(prices) => prices}
+  }
+
+  def fRequestQueryStats(queryId: Int): Future[(Double, Double, Double)] = {
+    val f = processingActor ? ProcessingProtocol.RequestQueryStats(queryId)
+    f.mapTo[ProcessingProtocol.QueryStats].map{case ProcessingProtocol.QueryStats(min, max, avg) => (min, max, avg)}
   }
 }
