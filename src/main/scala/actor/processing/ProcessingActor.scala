@@ -21,7 +21,7 @@ object ProcessingProtocol {
     extends ProcessingRequest
   case class RequestQueryStats(queryId: Int)
     extends ProcessingRequest
-  case class RequestProductPrices(productURL: String)
+  case class RequestProductStats(prodId: Int)
     extends ProcessingRequest
 
 
@@ -32,7 +32,7 @@ object ProcessingProtocol {
     extends ProcessingResponse
   case class QueryStats(min: Double, max: Double, avg: Double)
     extends ProcessingResponse
-  case class ProductPrices(prices: List[(Double, Timestamp)])
+  case class ProductStats(min: Double, max: Double, avg: Double)
     extends ProcessingResponse
 }
 class PriceProcessingActor extends Actor {
@@ -64,8 +64,8 @@ class PriceProcessingActor extends Actor {
       returnQueryResult(queryId)
     case RequestQueryStats(queryId) =>
       returnQueryStats(queryId)
-    case RequestProductPrices(productURL) =>
-      returnProductPrices(productURL)
+    case RequestProductStats(prodId) =>
+      returnProductStats(prodId)
 
   }
 
@@ -99,16 +99,14 @@ class PriceProcessingActor extends Actor {
     sender ! QueryStats(queryResult.minBy(_._2)._2, queryResult.maxBy(_._2)._2, queryResult.foldLeft(0.0)((r, c) => r + c._2)/queryResult.length)
   }
 
-  def returnProductPrices(productURL: String) = { log.debug(s"Returning result for product: $productURL")
-    db.withSession { implicit session =>
+  def returnProductStats(prodId: Int) = { log.debug(s"Returning result for product: $prodId")
+    val queryResult = db.withSession { implicit session =>
       val pricesList = for {
-        product <- tProducts if product.url === productURL
-        price <- tPrices if price.prodId === product.id
-        query <- tQueries if query.id === price.queryId
-      } yield (price.value, query.date)
-
-      sender ! ProductPrices(pricesList.list)
+        price <- tPrices if price.prodId === prodId
+      } yield (price.prodId, price.value)
+      pricesList.list
     }
+    sender ! ProductStats(queryResult.minBy(_._2)._2, queryResult.maxBy(_._2)._2, queryResult.foldLeft(0.0)((r, c) => r + c._2)/queryResult.length)
 
   }
 }
