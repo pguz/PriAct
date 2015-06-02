@@ -26,6 +26,15 @@ trait ClientActorApi {
   def akkaConfig = ConfigFactory.parseString(s"""
     akka {
       loglevel = "DEBUG"
+      actor.deployment {
+        /dbactor {
+          dispatcher = dbdispatcher
+        }
+      }
+    }
+    dbdispatcher {
+      type = PinnedDispatcher
+      executor = "thread-pool-executor"
     }
   """)
 

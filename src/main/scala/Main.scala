@@ -162,8 +162,9 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
       }
     )
 
-    btnStats.clicks.subscribe { _ =>
-      println("btnStats.clicks")
+    val obsStats = btnStats.clicks.observeOn(eventScheduler)
+
+    obsStats.subscribe { _ =>
       val statsFrame = new StatsFrame
       statsFrame.pack
       statsFrame.visible = true

@@ -5,13 +5,13 @@ package actor.db
  */
 
 import java.sql.Timestamp
-import java.util.Calendar
 
-import actor.mining.{DispatcherProtocol, CrawlerProtocol}
+import actor.mining.DispatcherProtocol
 import akka.actor.Actor
-import akka.actor.Actor.Receive
 import akka.event.Logging
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.slick.driver.H2Driver.simple._
 import scala.slick.jdbc.meta.MTable
 
@@ -35,18 +35,19 @@ class DBActor extends Actor{
 
   override def receive: Receive = {
     case DispatcherProtocol.SendRequestContentAndPrices(req, prices) => log.debug("Received prices!")
+      log.debug(context.dispatcher.toString)
       db.withSession { implicit session =>
-        val reqId = (tQueries returning tQueries.map(_.id)) += (0, req, new Timestamp(System.currentTimeMillis()))
+        val reqId = (tQueries returning tQueries.map(_.id)) +=(0, req, new Timestamp(System.currentTimeMillis()))
         prices.foreach(e1 =>
           e1.info.foreach(e => {
             var prodId: Int = 0
-            if (!tProducts.filter(_.url === e._1).exists.run){
-              prodId = (tProducts returning tProducts.map(_.id)) += (0, e._2, e._1)
+            if (!tProducts.filter(_.url === e._1).exists.run) {
+              prodId = (tProducts returning tProducts.map(_.id)) +=(0, e._2, e._1)
             }
             else {
               prodId = tProducts.filter(_.url === e._1).firstOption.get._1
             }
-            tPrices += (reqId, prodId, e._3)
+            tPrices +=(reqId, prodId, e._3)
           }
           ))
         //product foreach { case (id, name, url) =>
@@ -55,8 +56,8 @@ class DBActor extends Actor{
         //price foreach { case (reqId, prodId, value) =>
         //  println("  " + reqId + "\t" + prodId + "\t" + value)
         //}
-      }
       log.debug("Insert into DB complete!")
+    }
   }
 }
 

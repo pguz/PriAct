@@ -46,7 +46,7 @@ class DispatcherActor extends Actor with ActorLogging {
   implicit val timeout: Timeout
     = Timeout(120 seconds)
   var dbActor
-    = context.actorOf(Props[DBActor], name = "db")
+    = context.actorOf(Props[DBActor].withDispatcher("dbdispatcher"), name = "dbactor")
   var crawList: List[CrawlerActorRef]
     = List()
 
@@ -105,7 +105,7 @@ class DispatcherActor extends Actor with ActorLogging {
       case Success(x) => {
         log.debug("GetPrices with success")
         reqSender ! SendListPrices(x)
-        dbActor ! SendRequestContentAndPrices(prod, x)
+          dbActor ! SendRequestContentAndPrices(prod, x)
         log.debug("Sent prices to DB")
       }
       case Failure(err) => {
