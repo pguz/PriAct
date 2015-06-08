@@ -38,7 +38,7 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     val txtSearchProd = new TextField
     val btnSearchProd = new Button("Product")
     val btnSearchDesc = new Button("Description")
-    val mdlProds      = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Sklep", "Id", "Nazwa", "Cena") ) {
+    val mdlProds      = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Shop", "Id", "Name", "Price") ) {
       override def isCellEditable(r: Int, c: Int): Boolean = false
     }
     val btnStats      = new Button("Statistics")
@@ -53,11 +53,11 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
       colId.setMinWidth(0)
       colId.setPreferredWidth(0)
       colId.setMaxWidth(0)
-      val colShop = peer.getColumn("Sklep")
+      val colShop = peer.getColumn("Shop")
       colShop.setMinWidth(60)
       colShop.setPreferredWidth(60)
       colShop.setMaxWidth(60)
-      val colPrice = peer.getColumn("Cena")
+      val colPrice = peer.getColumn("Price")
       colPrice.setMinWidth(60)
       colPrice.setPreferredWidth(60)
       colPrice.setMaxWidth(60)

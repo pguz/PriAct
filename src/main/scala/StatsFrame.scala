@@ -20,8 +20,8 @@ class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
     preferredSize = new Dimension(900, 640)
     val txtSearch = new TextField
 
-    val btnAbstSearch = new Button("Szukaj")
-    val mdlAbstSearch = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Query ID", "Query", "Timestamp") ) {
+    val btnAbstSearch = new Button("Search")
+    val mdlAbstSearch = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("ID", "Query", "Timestamp") ) {
       override def isCellEditable(r: Int, c: Int): Boolean = false
     }
     val tblAbstProds      = new Table(25, 1) {
@@ -30,6 +30,16 @@ class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
       showGrid = true
       gridColor = new java.awt.Color(150, 150, 150)
       model = mdlAbstSearch
+
+      val colQueryId = peer.getColumn("ID")
+      colQueryId.setMinWidth(40)
+      colQueryId.setPreferredWidth(40)
+      colQueryId.setMaxWidth(40)
+
+      val colTimestamp = peer.getColumn("Timestamp")
+      colTimestamp.setMinWidth(200)
+      colTimestamp.setPreferredWidth(200)
+      colTimestamp.setMaxWidth(200)
     }
 
     val mdlAbstStats = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Min", "Max", "Avg") ) {
@@ -44,7 +54,7 @@ class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
     }
 
 
-    val btnConcSearch = new Button("Pobierz")
+    val btnConcSearch = new Button("Get")
     val mdlConcSearch = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Product ID", "Price") ) {
       override def isCellEditable(r: Int, c: Int): Boolean = false
     }
@@ -55,7 +65,7 @@ class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
       gridColor = new java.awt.Color(150, 150, 150)
       model = mdlConcSearch
     }
-    val btnConcStats = new Button("Statystyki")
+    val btnConcStats = new Button("Stats")
     val mdlConcStats = new DefaultTableModel( new Array[Array[AnyRef]](0), Array[AnyRef]("Min", "Max", "Avg") ) {
       override def isCellEditable(r: Int, c: Int): Boolean = false
     }
