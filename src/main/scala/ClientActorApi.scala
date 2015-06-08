@@ -79,4 +79,9 @@ trait ClientActorApi {
     val f = processingActor ? ProcessingProtocol.RequestQueryStats(queryId)
     f.mapTo[ProcessingProtocol.QueryStats].map{case ProcessingProtocol.QueryStats(min, max, avg) => (min, max, avg)}
   }
+
+  def fRequestProductStats(queryId: Int): Future[(Double, Double, Double)] = {
+    val f = processingActor ? ProcessingProtocol.RequestProductStats(queryId)
+    f.mapTo[ProcessingProtocol.ProductStats].map{case ProcessingProtocol.ProductStats(min, max, avg) => (min, max, avg)}
+  }
 }

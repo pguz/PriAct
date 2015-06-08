@@ -117,22 +117,25 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
 
     val eventScheduler = SchedulerEx.SwingEventThreadScheduler
 
-    val obsCboxAll: Observable[(String, Boolean)] = cboxAllegro.stateValues.observeOn(eventScheduler).map(("Allegro", _))
-    val obsCboxGum: Observable[(String, Boolean)] = cboxGumtree.stateValues.observeOn(eventScheduler).map(("Gumtree", _))
-    val obsCboxOlx: Observable[(String, Boolean)] = cboxOlx.stateValues.observeOn(eventScheduler).map(("Olx", _))
-    val cboxObs:    Observable[(String, Boolean)] = obsCboxAll.merge(obsCboxGum).merge(obsCboxOlx)
+    val obsCboxAll: Observable[Boolean]       = cboxAllegro.stateValues.observeOn(eventScheduler)
+    val obsCboxGum: Observable[Boolean]       = cboxGumtree.stateValues.observeOn(eventScheduler)
+    val obsCboxOlx: Observable[Boolean]       = cboxOlx.stateValues.observeOn(eventScheduler)
+    val obsBtnSearchProd: Observable[Button]  = btnSearchProd.clicks.observeOn(eventScheduler)
+    val obsBtnSearchDesc: Observable[Button]  = btnSearchDesc.clicks.observeOn(eventScheduler)
+    val obsBtnStats: Observable[Button]       = btnStats.clicks.observeOn(eventScheduler)
 
-    cboxObs.subscribe( _ match {
-      case (name, true)   => createCrawler(name)
-      case (name, false)  => removeCrawler(name)
-    })
+    val obsAll:   Observable[(String, Boolean)] = obsCboxAll.map(("Allegro", _))
+    val obsGum:   Observable[(String, Boolean)] = obsCboxGum.map(("Gumtree", _))
+    val obsOlx:   Observable[(String, Boolean)] = obsCboxOlx.map(("Olx", _))
+    val cboxObs:  Observable[(String, Boolean)] = obsAll.merge(obsGum).merge(obsOlx)
 
-    val obsSearchProd: Observable[String] = btnSearchProd.clicks.observeOn(eventScheduler).map(
-        _ => txtSearchProd.text)
 
-    val obsSearchDesc: Observable[(String, String)] = btnSearchDesc.clicks.observeOn(eventScheduler).filter(_
-      => tblProds.peer.getSelectedRowCount == 1).map(_
-      => (mdlProds.getValueAt(tblProds.peer.getSelectedRow, 0).toString, mdlProds.getValueAt(tblProds.peer.getSelectedRow, 1).toString))
+    val obsSearchProd: Observable[String]
+      = obsBtnSearchProd.map(_ => txtSearchProd.text)
+    val obsSearchDesc: Observable[(String, String)]
+      = obsBtnSearchDesc.filter(_ => tblProds.peer.getSelectedRowCount == 1)
+        .map(_ => (mdlProds.getValueAt(tblProds.peer.getSelectedRow, 0).toString,
+                    mdlProds.getValueAt(tblProds.peer.getSelectedRow, 1).toString))
 
     crawList foreach {
       crawler => createCrawler(crawler) onComplete {
@@ -142,31 +145,37 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
       }
     }
 
+    cboxObs.subscribe( _ match {
+      case (name, true)   => createCrawler(name)
+      case (name, false)  => removeCrawler(name)
+    })
+
     obsSearchProd.subscribe(
       n => getPrices(n) onComplete {
-        case Success(results)   =>
+        case Success(results) =>
           if(mdlProds.getRowCount > 0) mdlProds.setRowCount(0)
           results.sortBy(_._4).foreach{ res =>
             mdlProds.addRow(Array[AnyRef](res._1, res._2, res._3, res._4.toString()))}
-        case Failure(err) => dspStatus("getPrices error: " + err.getMessage)
+        case Failure(err)     =>
+          dspStatus("getPrices error: " + err.getMessage)
       }
     )
 
-    obsSearchDesc.subscribe(
-      n => getDescription(n._1, n._2) onComplete {
-        case Success(desc)  =>
-          edtDesc.text = desc
-        case Failure(err)   =>
-          edtDesc.text =
-            "Error: " + err.getMessage
-      }
-    )
+    obsSearchDesc.subscribe {
+      n =>
+        println("obsSearchDesc")
+        getDescription(n._1, n._2) onComplete {
+          case Success(desc) =>
+            edtDesc.text = desc
+          case Failure(err) =>
+            edtDesc.text =
+              "Error: " + err.getMessage
+        }
+    }
 
-    val obsStats = btnStats.clicks.observeOn(eventScheduler)
-
-    obsStats.subscribe { _ =>
+    obsBtnStats.subscribe { _ =>
       val statsFrame = new StatsFrame
-      statsFrame.pack
+      //statsFrame.pack
       statsFrame.visible = true
     }
   }
