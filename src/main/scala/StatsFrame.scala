@@ -94,9 +94,9 @@ class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
           border = EmptyBorder(top = 10, left = 10, bottom = 10, right = 10)
 
           val paneAbstStats = new ScrollPane(tblAbstStats)
-          paneAbstStats.maximumSize = new Dimension(450, 55)
-          paneAbstStats.minimumSize = new Dimension(450, 55)
-          paneAbstStats.preferredSize = new Dimension(450, 55)
+          paneAbstStats.maximumSize = new Dimension(450, 56)
+          paneAbstStats.minimumSize = new Dimension(450, 56)
+          paneAbstStats.preferredSize = new Dimension(450, 56)
           contents += paneAbstStats
 
           contents += new ScrollPane(tblConcProds)
@@ -107,9 +107,9 @@ class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
           }
 
           val paneConcStats = new ScrollPane(tblConcStats)
-          paneConcStats.maximumSize = new Dimension(450, 55)
-          paneConcStats.minimumSize = new Dimension(450, 55)
-          paneConcStats.preferredSize = new Dimension(450, 55)
+          paneConcStats.maximumSize = new Dimension(450, 56)
+          paneConcStats.minimumSize = new Dimension(450, 56)
+          paneConcStats.preferredSize = new Dimension(450, 56)
           contents += paneConcStats
         }
       }
@@ -159,7 +159,7 @@ class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
   )
 
   obsConcStats.subscribe(
-    id => fRequestQueryStats(id) onComplete {
+    id => fRequestProductStats(id) onComplete {
       case Success(stats)   =>
         if(mdlConcStats.getRowCount > 0) mdlConcStats.setRowCount(0)
         println("Success list: " + stats)
