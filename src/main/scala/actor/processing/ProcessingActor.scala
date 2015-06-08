@@ -96,7 +96,7 @@ class PriceProcessingActor extends Actor {
       } yield (price.prodId, price.value)
       pricesList.list
     }
-    sender ! QueryStats(queryResult.minBy(_._2)._2, queryResult.maxBy(_._2)._2, queryResult.foldLeft(0.0)((r, c) => r + c._2)/queryResult.length)
+    sender ! QueryStats(queryResult.minBy(_._2)._2, queryResult.maxBy(_._2)._2, BigDecimal(queryResult.foldLeft(0.0)((r, c) => r + c._2)/queryResult.length).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
   }
 
   def returnProductStats(prodId: Int) = { log.debug(s"Returning result for product: $prodId")
@@ -106,7 +106,7 @@ class PriceProcessingActor extends Actor {
       } yield (price.prodId, price.value)
       pricesList.list
     }
-    sender ! ProductStats(queryResult.minBy(_._2)._2, queryResult.maxBy(_._2)._2, queryResult.foldLeft(0.0)((r, c) => r + c._2)/queryResult.length)
+    sender ! ProductStats(queryResult.minBy(_._2)._2, queryResult.maxBy(_._2)._2, BigDecimal(queryResult.foldLeft(0.0)((r, c) => r + c._2)/queryResult.length).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
 
   }
 }
