@@ -1,11 +1,10 @@
+import allegro.AllegroAnalyzer;
 import cc.mallet.classify.Classification;
 import cc.mallet.classify.Classifier;
 import cc.mallet.classify.Trial;
 import cc.mallet.pipe.CharSequence2TokenSequence;
 import cc.mallet.pipe.FeatureSequence2FeatureVector;
-import cc.mallet.pipe.Input2CharSequence;
 import cc.mallet.pipe.Pipe;
-import cc.mallet.pipe.PrintInputAndTarget;
 import cc.mallet.pipe.SerialPipes;
 import cc.mallet.pipe.Target2Label;
 import cc.mallet.pipe.TokenSequence2FeatureSequence;
@@ -13,6 +12,9 @@ import cc.mallet.pipe.TokenSequenceLowercase;
 import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
 import com.google.common.base.Joiner;
+import common.Product;
+import gumtree.GumtreeAnalyzer;
+import olx.OlxAnalyzer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,15 +36,22 @@ public class Main {
 
     public static void main(String [] args) {
         log.info("Main started");
-        AllegroAnalyzer allegroAnalyzer = new AllegroAnalyzer();
         String productAndCategory = "iphone 6 128?iphone";
         log.info("Searching " + productAndCategory);
+        performAllegroSearchAndLearn(productAndCategory);
+        performGumtreeSearchAndLearn(productAndCategory);
+        performOlxSearchAndLearn(productAndCategory);
+        log.info("PriActTrainer has finished working");
+    }
+
+    public static void performAllegroSearchAndLearn(String productAndCategory) {
         Set<Pair<Product, Boolean>> productSet = null;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        AllegroAnalyzer allegroAnalyzer = new AllegroAnalyzer();
         while (true) {
             productSet = allegroAnalyzer.getProducts(productAndCategory);
             if (productSet.size()<1) {
-                log.error("Something went wrong, no products were found! Retry? Exit - enter exit");
+                log.error("Allegro: Something went wrong, no products were found (got blocked?)! Retry? Exit - enter exit");
                 String input = null;
                 try {
                     input = br.readLine();
@@ -52,7 +61,7 @@ public class Main {
                 if (!input.toLowerCase().contains("exit")) {
                     continue;
                 } else {
-                    log.error("Exiting classifier learning");
+                    log.error("Allegro: Exiting classifier learning");
                     return;
                 }
             } else {
@@ -72,43 +81,152 @@ public class Main {
                 falseCount = falseCount + 1;
             }
             Instance currentInstance = new Instance(pair.getLeft().toString(), pair.getRight(), pair.getLeft().getName(), "");
-            log.info(pair.getLeft().toString());
+            //log.info(pair.getLeft().toString());
             trainingInstanceList.addThruPipe(currentInstance);
         }
-        log.info(Joiner.on(", ").join("true: ", trueCount.toString(), ", false:", falseCount.toString()));
-        log.info("Trying to perform classifier learning, instance list size: " + trainingInstanceList.size());
+        log.info(Joiner.on("").join("true: ", trueCount.toString(), ", false:", falseCount.toString()));
+        log.info("Allegro: Trying to perform classifier learning, instance list size: " + trainingInstanceList.size());
         Trainer trainer = new Trainer();
         Classifier allegroNaiveBayes = trainer.trainClassifier(trainingInstanceList);
-        log.info("Learned classifier, trying to save it");
+        log.info("Allegro: Learned classifier, trying to save it");
         try {
-            trainer.saveClassifier(allegroNaiveBayes, new File("allegroclassifier_"
+            trainer.saveClassifier(allegroNaiveBayes, new File("../classifiers/allegroclassifier_"
                     + productAndCategory.toLowerCase().replaceAll(" ", "_") +  ".priact"));
         } catch (IOException e) {
             log.error(e.getLocalizedMessage());
             e.printStackTrace();
         }
-        log.info("Finished, testing what learned..");
+        log.info("Allegro: Finished, testing what learned..");
         Trial trial = new Trial(allegroNaiveBayes, trainingInstanceList);
-        log.info("Accuracy for the same data as learned: " + trial.getAccuracy());
+        log.info("Allegro: Accuracy for the same data as learned: " + trial.getAccuracy());
         Instance testInstance = trainingInstanceList.get(0);
         Classification result = allegroNaiveBayes.classify(testInstance);
-        log.info("potential class of " + result.getLabeling().getBestLabel().toString());
-        log.info("PriActTrainer has finished working");
+        log.info("Allegro: potential class of " + result.getLabeling().getBestLabel().toString());
+    }
+
+    public static void performGumtreeSearchAndLearn(String productAndCategory) {
+        Set<Pair<Product, Boolean>> productSet = null;
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        GumtreeAnalyzer gumtreeAnalyzer = new GumtreeAnalyzer();
+        while (true) {
+            productSet = gumtreeAnalyzer.getProducts(productAndCategory);
+            if (productSet.size()<1) {
+                log.error("Gumtree: Something went wrong, no products were found (got blocked?)! Retry? Exit - enter exit");
+                String input = null;
+                try {
+                    input = br.readLine();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (!input.toLowerCase().contains("exit")) {
+                    continue;
+                } else {
+                    log.error("Gumtree: Exiting classifier learning");
+                    return;
+                }
+            } else {
+                break;
+            }
+        }
+
+        Integer falseCount = 0;
+        Integer trueCount = 0;
+        Pipe pipe = buildPipe();
+        InstanceList trainingInstanceList = new InstanceList(pipe);
+
+        for (Pair<Product,Boolean> pair : productSet) {
+            if (pair.getRight().equals(true)) {
+                trueCount = trueCount + 1;
+            } else if (pair.getRight().equals(false)) {
+                falseCount = falseCount + 1;
+            }
+            Instance currentInstance = new Instance(pair.getLeft().toString(), pair.getRight(), pair.getLeft().getName(), "");
+            //log.info(pair.getLeft().toString());
+            trainingInstanceList.addThruPipe(currentInstance);
+        }
+        log.info(Joiner.on("").join("true: ", trueCount.toString(), ", false:", falseCount.toString()));
+        log.info("Gumtree: Trying to perform classifier learning, instance list size: " + trainingInstanceList.size());
+        Trainer trainer = new Trainer();
+        Classifier gumtreeNaiveBayes = trainer.trainClassifier(trainingInstanceList);
+        log.info("Gumtree: Learned classifier, trying to save it");
+        try {
+            trainer.saveClassifier(gumtreeNaiveBayes, new File("../classifiers/gumtreeclassifier_"
+                    + productAndCategory.toLowerCase().replaceAll(" ", "_") +  ".priact"));
+        } catch (IOException e) {
+            log.error(e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+        log.info("Gumtree: Finished, testing what learned..");
+        Trial trial = new Trial(gumtreeNaiveBayes, trainingInstanceList);
+        log.info("Gumtree: Accuracy for the same data as learned: " + trial.getAccuracy());
+        Instance testInstance = trainingInstanceList.get(0);
+        Classification result = gumtreeNaiveBayes.classify(testInstance);
+        log.info("Gumtree: potential class of first is " + result.getLabeling().getBestLabel().toString());
+    }
+
+    public static void performOlxSearchAndLearn(String productAndCategory) {
+        Set<Pair<Product, Boolean>> productSet = null;
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        OlxAnalyzer olxAnalyzer = new OlxAnalyzer();
+        while (true) {
+            productSet = olxAnalyzer.getProducts(productAndCategory);
+            if (productSet.size()<1) {
+                log.error("Olx: Something went wrong, no products were found (got blocked?)! Retry? Exit - enter exit");
+                String input = null;
+                try {
+                    input = br.readLine();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (!input.toLowerCase().contains("exit")) {
+                    continue;
+                } else {
+                    log.error("Olx: Exiting classifier learning");
+                    return;
+                }
+            } else {
+                break;
+            }
+        }
+
+        Integer falseCount = 0;
+        Integer trueCount = 0;
+        Pipe pipe = buildPipe();
+        InstanceList trainingInstanceList = new InstanceList(pipe);
+
+        for (Pair<Product,Boolean> pair : productSet) {
+            if (pair.getRight().equals(true)) {
+                trueCount = trueCount + 1;
+            } else if (pair.getRight().equals(false)) {
+                falseCount = falseCount + 1;
+            }
+            Instance currentInstance = new Instance(pair.getLeft().toString(), pair.getRight(), pair.getLeft().getName(), "");
+            //log.info(pair.getLeft().toString());
+            trainingInstanceList.addThruPipe(currentInstance);
+        }
+        log.info(Joiner.on("").join("true: ", trueCount.toString(), ", false: ", falseCount.toString()));
+        log.info("Olx: Trying to perform classifier learning, instance list size: " + trainingInstanceList.size());
+        Trainer trainer = new Trainer();
+        Classifier olxNaiveBayes = trainer.trainClassifier(trainingInstanceList);
+        log.info("Olx: Learned classifier, trying to save it");
+        try {
+            trainer.saveClassifier(olxNaiveBayes, new File("../classifiers/olxclassifier_"
+                    + productAndCategory.toLowerCase().replaceAll(" ", "_") +  ".priact"));
+        } catch (IOException e) {
+            log.error(e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+        log.info("Olx: Finished, testing what learned..");
+        Trial trial = new Trial(olxNaiveBayes, trainingInstanceList);
+        log.info("Olx: Accuracy for the same data as learned: " + trial.getAccuracy());
+        Instance testInstance = trainingInstanceList.get(0);
+        Classification result = olxNaiveBayes.classify(testInstance);
+        log.info("Olx: potential class of first is " + result.getLabeling().getBestLabel().toString());
     }
 
     public static Pipe buildPipe() {
         ArrayList pipeList = new ArrayList();
 
-        // Read data from File objects
-        pipeList.add(new Input2CharSequence("UTF-8"));
-
-        // Regular expression for what constitutes a token.
-        //  This pattern includes Unicode letters, Unicode numbers,
-        //   and the underscore character. Alternatives:
-        //    "\\S+"   (anything not whitespace)
-        //    "\\w+"    ( A-Z, a-z, 0-9, _ )
-        //    "[\\p{L}\\p{N}_]+|[\\p{P}]+"   (a group of only letters and numbers OR
-        //                                    a group of only punctuation marks)
         Pattern tokenPattern =
                 Pattern.compile("[^;;;]+[^;;;]");
 
@@ -132,7 +250,7 @@ public class Main {
         pipeList.add(new FeatureSequence2FeatureVector());
 
         // Print out the features and the label
-        pipeList.add(new PrintInputAndTarget());
+        //pipeList.add(new PrintInputAndTarget());
 
         return new SerialPipes(pipeList);
     }

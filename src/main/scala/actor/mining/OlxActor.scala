@@ -1,8 +1,11 @@
 package actor.mining
 
 import akka.actor.ActorRef
+import cc.mallet.classify.Classification
+import cc.mallet.types.Instance
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
+import org.jsoup.select.Elements
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.Breaks._
@@ -38,6 +41,7 @@ class OlxActor extends CrawlerActor {
 
   override def getPrices(productAndCategory: String): List[(String, String, Double)] = {
     println("OlxActor: getPrices")
+    val classifier = new TextClassifier(productAndCategory, "olx")
 
     val product = productAndCategory.split("\\?")(0)
     var category: String = ""
@@ -52,7 +56,15 @@ class OlxActor extends CrawlerActor {
     if(product.length < 1) return list.toList
 
     var page = 1
-    val endPage = getMaxPageResult(getSourceCode(product, 1))
+    var endPage = getMaxPageResult(getSourceCode(product, 1))
+    val maxEndPage = 999
+
+    // limitowanie wyników
+    if(endPage > maxEndPage) {
+      endPage = maxEndPage
+      println("OlxActor: limiting pages to " + endPage)
+    }
+
     breakable {
       while(true) {
         val pageSource = getSourceCode(product, page)
@@ -63,7 +75,7 @@ class OlxActor extends CrawlerActor {
       }
     }
 
-    contentList.foldLeft(list)((l, d) => l ++= processPage(d, category))
+    contentList.foldLeft(list)((l, d) => l ++= processPage(d, category, product, classifier))
     println("OlxActor: got products: " + list.size + " from processed pages: " + contentList.size)
 
     list.reverse.sorted.toList
@@ -95,7 +107,7 @@ class OlxActor extends CrawlerActor {
     }
   }
 
-  def processPage(doc: Document, category: String): ListBuffer[(String, String, Double)] = {
+  def processPage(doc: Document, category: String, product: String, classifier: TextClassifier): ListBuffer[(String, String, Double)] = {
     // wzięcie ofert tylko z tabeli normalnych ofert, załatwia nam odfiltrowanie powtórzonych ofert wyróżnionych jednocześnie
     // nie wywalając ofert wyróżnionych
     val pageList = scala.collection.mutable.ListBuffer.empty[(String, String, Double)]
@@ -112,8 +124,17 @@ class OlxActor extends CrawlerActor {
           val currentProductPrice = currentProductPriceOcc.get
           val currentProductName = currentProduct.getElementsByTag("h3").first().text()
           val currentProductLink = currentProduct.getElementsByTag("h3").first().getElementsByTag("a").first().attr("href").replaceAll(urlTrashPattern, "")
+          var currentProductDescriptionAndCategory:(Element, Elements) = null
+          var productAsInstance:(Instance) = null
+          if(category.length > 0) {
+            currentProductDescriptionAndCategory = getDescriptionAndCategories(currentProductLink)
+            productAsInstance = classifier.prepareInstance(currentProductName, currentProductLink, currentProductPrice.toString,
+              currentProductDescriptionAndCategory._2.text(), currentProductDescriptionAndCategory._2.text(), product, category)
+          }
 
-          if(preProcessProduct(currentProductLink, category)) {
+          if(classifier.getClassifier!=null && classifyProduct(currentProductLink, productAsInstance, classifier)) {
+            pageList += ((currentProductLink, currentProductName, currentProductPrice.replace(",",".").toDouble))
+          } else if (classifier.getClassifier == null && preProcessProduct(currentProductLink, category, currentProductDescriptionAndCategory)) {
             pageList += ((currentProductLink, currentProductName, currentProductPrice.replace(",",".").toDouble))
           }
         }
@@ -122,14 +143,32 @@ class OlxActor extends CrawlerActor {
     pageList
   }
 
-  def preProcessProduct(link: String, desiredCategory: String): Boolean = {
+  def getDescriptionAndCategories(link: String): (Element, Elements) = {
+    val doc = Jsoup.connect(link).get()
+    val categories = doc.select("#breadcrumbTop .inline")
+    val description = doc.getElementById(descriptionId);
+    (description, categories)
+  }
+
+  def classifyProduct(link: String, product: Instance, classifier: TextClassifier): Boolean = {
+    print("GumtreeActor: preProcessingProduct " + link + " with classifier ")
+    val result: Classification = classifier.getClassifier.classify(product)
+    if(result.getLabeling.getBestLabel.toString eq("true")) {
+      println(" ok")
+      return true
+    } else {
+      println(" failed")
+      return false
+    }
+  }
+
+  def preProcessProduct(link: String, desiredCategory: String, descriptionAndCategories: (Element, Elements)): Boolean = {
     print("OlxActor: preProcessingProduct " + link)
     if (desiredCategory==null || desiredCategory.length()==0) {
       println(" ok")
       return true
     }
-    val doc = Jsoup.connect(link).get()
-    val categories = doc.select("#breadcrumbTop .inline")
+    val categories = descriptionAndCategories._2
     val catIterator = categories.iterator()
     while(catIterator.hasNext) {
       val selectedCat = catIterator.next()

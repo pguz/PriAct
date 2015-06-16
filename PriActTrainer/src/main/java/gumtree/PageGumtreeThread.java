@@ -1,4 +1,7 @@
+package gumtree;
+
 import com.google.common.collect.Sets;
+import common.Product;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -11,16 +14,16 @@ import java.util.Set;
 /**
  * Created by sopello on 01.06.2015.
  */
-public class PageAllegroThread extends Thread {
+public class PageGumtreeThread extends Thread {
 
     private Set<Pair<Product, Boolean>> productsFromPage;
-    private static final Logger log = LoggerFactory.getLogger(PageAllegroThread.class);
+    private static final Logger log = LoggerFactory.getLogger(PageGumtreeThread.class);
     private boolean result;
     private Document doc;
     private String category;
     private String productQuery;
 
-    public PageAllegroThread(Document doc, String category, Set<Pair<Product, Boolean>> productsFromPage, String productQuery) {
+    public PageGumtreeThread(Document doc, String category, Set<Pair<Product, Boolean>> productsFromPage, String productQuery) {
         super();
         this.doc = doc;
         this.category = category;
@@ -29,17 +32,18 @@ public class PageAllegroThread extends Thread {
     }
 
     private void performPageProcessing() {
-        Elements iteration = doc.body().getElementsByClass(AllegroAnalyzer.iterableClass);
+        Element productTable = doc.body().getElementById(GumtreeAnalyzer.productTableId);
+        Elements iteration = productTable.getElementsByClass(GumtreeAnalyzer.iterableClass);
         Set<Thread> processThreads = Sets.newHashSet();
         for (Element currentProduct : iteration) {
-            ProcessAllegroThread processAllegroThread = new ProcessAllegroThread(category, productsFromPage, currentProduct, productQuery);
-            processThreads.add(processAllegroThread);
+            ProcessGumtreeThread processGumtreeThread = new ProcessGumtreeThread(category, productsFromPage, currentProduct, productQuery);
+            processThreads.add(processGumtreeThread);
         }
 
         for (Thread t : processThreads) {
             t.start();
             try {
-                Thread.sleep(2 * AllegroAnalyzer.threadFiringInterval);
+                Thread.sleep(2 * GumtreeAnalyzer.threadFiringInterval);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

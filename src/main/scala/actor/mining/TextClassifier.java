@@ -3,7 +3,6 @@ package actor.mining;
 import cc.mallet.classify.Classifier;
 import cc.mallet.pipe.CharSequence2TokenSequence;
 import cc.mallet.pipe.FeatureSequence2FeatureVector;
-import cc.mallet.pipe.Input2CharSequence;
 import cc.mallet.pipe.Pipe;
 import cc.mallet.pipe.SerialPipes;
 import cc.mallet.pipe.Target2Label;
@@ -89,7 +88,7 @@ public class TextClassifier {
             Integer queryCountInTitle = StringUtils.countMatches(currentProductName.toLowerCase(), productQuery);
             sb.append(queryCountInTitle.toString());
             sb.append(";;;");
-            log.info(sb.toString());
+//            log.info(sb.toString());
             return getPipe().instanceFrom(new Instance(sb.toString(), "", currentProductName, ""));
         } else {
             return null;
@@ -99,9 +98,6 @@ public class TextClassifier {
 
     private Pipe buildPipe() {
         ArrayList pipeList = new ArrayList();
-
-        // Read data from File objects
-        pipeList.add(new Input2CharSequence("UTF-8"));
 
         Pattern tokenPattern =
                 Pattern.compile("[^;;;]+[^;;;]");

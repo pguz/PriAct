@@ -54,7 +54,7 @@ class AllegroActor extends CrawlerActor {
 
     var page = 1
     var endPage = getMaxPageResult(getSourceCode(product, 1))
-    val maxEndPage = 1
+    val maxEndPage = 999
 
     // limitowanie wyników
     if(endPage > maxEndPage) {
@@ -131,9 +131,9 @@ class AllegroActor extends CrawlerActor {
             currentProductDescriptionAndCategory._2.text(), currentProductDescriptionAndCategory._2.text(), productQuery, category)
         }
 
-        if(classifier!=null && classifyProduct(currentProductLink, productAsInstance, classifier)) {
+        if(classifier.getClassifier!=null && classifyProduct(currentProductLink, productAsInstance, classifier)) {
           pageList += ((currentProductLink, currentProductName, currentProductPrice.replace(",",".").toDouble))
-        } else if (classifier == null && preProcessProduct(currentProductLink, category, currentProductDescriptionAndCategory)) {
+        } else if (classifier.getClassifier == null && preProcessProduct(currentProductLink, category, currentProductDescriptionAndCategory)) {
           pageList += ((currentProductLink, currentProductName, currentProductPrice.replace(",",".").toDouble))
         }
       }
@@ -150,13 +150,13 @@ class AllegroActor extends CrawlerActor {
   }
 
   def classifyProduct(link: String, product: Instance, classifier: TextClassifier): Boolean = {
-    print("AllegroActor: preProcessingProduct " + link + " with classifier")
+    print("AllegroActor: preProcessingProduct " + link + " with classifier ")
     val result: Classification = classifier.getClassifier.classify(product)
-    if(result.getLabeling..getBestLabel.toString eq("true")) {
-      println(" ok")
+    if(result.getLabeling.getBestLabel.toString eq("true")) {
+      println("; ok")
       return true
     } else {
-      println(" failed")
+      println("; failed")
       return false
     }
   }

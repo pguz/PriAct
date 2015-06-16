@@ -1,5 +1,8 @@
+package allegro;
+
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
+import common.Product;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -70,7 +73,7 @@ public class AllegroAnalyzer {
         for (Thread t : pageAnalysisThreads) {
             t.start();
             try {
-                Thread.sleep(endPage*AllegroAnalyzer.threadFiringInterval);
+                Thread.sleep(AllegroAnalyzer.threadFiringInterval);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -92,7 +95,7 @@ public class AllegroAnalyzer {
         for (Thread t : pageThreads) {
             t.start();
             try {
-                Thread.sleep(AllegroAnalyzer.threadFiringInterval);
+                Thread.sleep(15*AllegroAnalyzer.threadFiringInterval);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
