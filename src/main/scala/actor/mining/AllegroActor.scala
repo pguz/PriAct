@@ -1,6 +1,9 @@
 package actor.mining
 
 import akka.actor.ActorRef
+import cc.mallet.classify.{Classification, Classifier}
+import cc.mallet.pipe.Pipe
+import cc.mallet.types.Instance
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.jsoup.select.Elements
@@ -22,7 +25,7 @@ object AllegroActor  {
     // offerTypeBuyNow=1 -> tylko kup teraz
     //warunek stopu dla pętli pobierania: sprawdzenie czy na stronie wynikowej mamy komunikat zawarty wyżej
     //println("AllegroActor: getSourceCode, search product " + product + ", page " + page)
-    Jsoup.connect(s"http://allegro.pl/listing/listing.php?bmatch=seng-ps-mp-p-sm-isqm-2-e-0402&order=p&description=0&limit=180&string=$product&p=$page&offerTypeBuyNow=1").get()
+    Jsoup.connect(s"http://allegro.pl/listing/listing.php?bmatch=seng-ps-mp-p-sm-isqm-2-e-0402&description=0&limit=180&string=$product&p=$page&offerTypeBuyNow=1").get()
   }
 }
 
@@ -36,6 +39,7 @@ class AllegroActor extends CrawlerActor {
 
   override def getPrices(productAndCategory: String): List[(String, String, Double)]= {
     println("AllegroActor: getPrices")
+    val classifier = new TextClassifier(productAndCategory, "allegro")
     val contentList: ListBuffer[Document] = ListBuffer()
     val product = productAndCategory.split("\\?")(0)
     var category = ""
@@ -49,7 +53,14 @@ class AllegroActor extends CrawlerActor {
     if(product.length < 1) return list.toList
 
     var page = 1
-    val endPage = getMaxPageResult(getSourceCode(product, 1))
+    var endPage = getMaxPageResult(getSourceCode(product, 1))
+    val maxEndPage = 1
+
+    // limitowanie wyników
+    if(endPage > maxEndPage) {
+      endPage = maxEndPage
+      println("AllegroActor: limiting pages to " + endPage)
+    }
     breakable {
       while(true) {
         val pageSource = getSourceCode(product, page)
@@ -60,7 +71,7 @@ class AllegroActor extends CrawlerActor {
       }
     }
 
-    contentList.foldLeft(list)((l, d) => l ++= processPage(d, category))
+    contentList.foldLeft(list)((l, d) => l ++= processPage(d, category, classifier, product))
     println("AllegroActor: got products: " + list.size + " from processed pages: " + contentList.size)
 
     list.reverse.sorted.toList
@@ -100,7 +111,7 @@ class AllegroActor extends CrawlerActor {
     return pageNum
   }
 
-  def processPage(doc: Document, category: String): ListBuffer[(String, String, Double)] = {
+  def processPage(doc: Document, category: String, classifier: TextClassifier, productQuery: String): ListBuffer[(String, String, Double)] = {
     val iteration = doc.body().getElementsByClass(iterableClass)
     val productList: java.util.Iterator[Element] = iteration.iterator()
     val pageList = scala.collection.mutable.ListBuffer.empty[(String, String, Double)]
@@ -112,8 +123,17 @@ class AllegroActor extends CrawlerActor {
         val currentProductPrice = currentProductPriceFound.get
         val currentProductName = currentProduct.getElementsByClass("details").first().getElementsByTag("h2").text()
         val currentProductLink = "http://allegro.pl" + currentProduct.getElementsByClass("details").first().getElementsByTag("a").first().attr("href")
+        var currentProductDescriptionAndCategory:(Element, Elements) = null
+        var productAsInstance:(Instance) = null
+        if(category.length > 0) {
+          currentProductDescriptionAndCategory = getDescriptionAndCategories(currentProductLink)
+          productAsInstance = classifier.prepareInstance(currentProductName, currentProductLink, currentProductPrice.toString,
+            currentProductDescriptionAndCategory._2.text(), currentProductDescriptionAndCategory._2.text(), productQuery, category)
+        }
 
-        if(preProcessProduct(currentProductLink, category)) {
+        if(classifier!=null && classifyProduct(currentProductLink, productAsInstance, classifier)) {
+          pageList += ((currentProductLink, currentProductName, currentProductPrice.replace(",",".").toDouble))
+        } else if (classifier == null && preProcessProduct(currentProductLink, category, currentProductDescriptionAndCategory)) {
           pageList += ((currentProductLink, currentProductName, currentProductPrice.replace(",",".").toDouble))
         }
       }
@@ -121,15 +141,33 @@ class AllegroActor extends CrawlerActor {
     pageList
   }
 
-  def preProcessProduct(link: String, desiredCategory: String): Boolean = {
-    print("AllegroActor: preProcessingProduct " + link)
-    if (desiredCategory==null || desiredCategory.length()==0) {
+  def getDescriptionAndCategories(link: String): (Element, Elements) = {
+    val doc = Jsoup.connect(link).get()
+    var categories = doc.select(".itemscope span[itemprop=\"title\"]")
+    if(categories.size()==0) categories = doc.select(".breadcrumb-container")
+    val description = doc.getElementById(descriptionId);
+    (description, categories)
+  }
+
+  def classifyProduct(link: String, product: Instance, classifier: TextClassifier): Boolean = {
+    print("AllegroActor: preProcessingProduct " + link + " with classifier")
+    val result: Classification = classifier.getClassifier.classify(product)
+    if(result.getLabeling..getBestLabel.toString eq("true")) {
       println(" ok")
       return true
+    } else {
+      println(" failed")
+      return false
     }
-    val doc = Jsoup.connect(link).get()
-    var categories = doc.select(".itemscope")
-    if(categories.size()==0) categories = doc.select(".breadcrumb-container")
+  }
+
+  def preProcessProduct(link: String, desiredCategory: String, descriptionAndCategories: (Element, Elements)): Boolean = {
+    print("AllegroActor: preProcessingProduct " + link + " without classifier")
+    if (desiredCategory==null || desiredCategory.length()==0) {
+      println(" and without category ok")
+      return true
+    }
+    val categories = descriptionAndCategories._2
     val catIterator = categories.iterator()
     while(catIterator.hasNext) {
       val selectedCat = catIterator.next()
