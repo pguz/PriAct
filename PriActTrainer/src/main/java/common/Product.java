@@ -1,7 +1,5 @@
 package common;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * Created by sopello on 01.06.2015.
  */
@@ -83,23 +81,21 @@ public class Product {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(name);
-        sb.append(";;;");
+//        sb.append(name.toLowerCase());
+//        sb.append(";;;");
         sb.append(url);
         sb.append(";;;");
-        sb.append(price.toString());
-        sb.append(";;;");
-        sb.append(categories);
+        sb.append(categories.toLowerCase());
         sb.append(";;;");
         boolean categoriesContainsDesired = categories.toLowerCase().contains(desiredCategory.toLowerCase());
         sb.append(categoriesContainsDesired);
         sb.append(";;;");
-        Integer queryCountInDescription = StringUtils.countMatches(description.toLowerCase(), query.toLowerCase());
-        sb.append(queryCountInDescription.toString());
-        sb.append(";;;");
-        Integer queryCountInTitle = StringUtils.countMatches(name.toLowerCase(), query.toLowerCase());
-        sb.append(queryCountInTitle.toString());
-        sb.append(";;;");
+//        Integer queryCountInDescription = StringUtils.countMatches(description.toLowerCase(), query.toLowerCase());
+//        sb.append(queryCountInDescription.toString());
+//        sb.append(";;;");
+//        Integer queryCountInTitle = StringUtils.countMatches(name.toLowerCase(), query.toLowerCase());
+//        sb.append(queryCountInTitle.toString());
+//        sb.append(";;;");
 
         return sb.toString();
     }

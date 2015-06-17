@@ -50,18 +50,18 @@ public class ProcessAllegroThread extends Thread {
                 currentProductPrice, currentProductCategory, queryProduct, desiredCategory);
 
         if (desiredCategory == null || desiredCategory.length()==0) {
-            log.info("allegro.ProcessOlxThread: preProcessingProduct " + contextProduct.getUrl() + " ok - no category specified");
+            log.info("ProcessAllegroThread: preProcessingProduct " + contextProduct.getUrl() + " ok - no category specified");
             productsFromPage.add(Pair.of(contextProduct, true));
             return;
         }
 
         if (currentProductCategory.toLowerCase().contains(desiredCategory.toLowerCase())) {
-            log.info("allegro.ProcessOlxThread: preProcessingProduct " + contextProduct.getUrl() + " ok");
+            log.info("ProcessAllegroThread: preProcessingProduct " + contextProduct.getUrl() + " ok");
             productsFromPage.add(Pair.of(contextProduct, true));
             return;
         }
 
-        log.info("allegro.ProcessOlxThread: preProcessingProduct " + contextProduct.getUrl() + " failed");
+        log.info("ProcessAllegroThread: preProcessingProduct " + contextProduct.getUrl() + " failed");
         log.error("preProcessingProduct failed where categories are " + currentProductCategory);
         productsFromPage.add(Pair.of(contextProduct, false));
         return;

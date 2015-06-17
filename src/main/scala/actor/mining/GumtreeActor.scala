@@ -145,15 +145,7 @@ class GumtreeActor extends CrawlerActor {
   }
 
   def classifyProduct(link: String, product: Instance, classifier: TextClassifier): Boolean = {
-    print("GumtreeActor: preProcessingProduct " + link + " with classifier ")
-    val result: Classification = classifier.getClassifier.classify(product)
-    if(result.getLabeling.getBestLabel.toString eq("true")) {
-      println(" ok")
-      return true
-    } else {
-      println(" failed")
-      return false
-    }
+    classifier.classify(product, link)
   }
 
   def preProcessProduct(link: String, desiredCategory: String, title: String, product: String, descriptionAndCategories: (Element, Elements)): Boolean = {

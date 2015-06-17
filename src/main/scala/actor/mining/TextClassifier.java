@@ -1,5 +1,6 @@
 package actor.mining;
 
+import cc.mallet.classify.Classification;
 import cc.mallet.classify.Classifier;
 import cc.mallet.pipe.CharSequence2TokenSequence;
 import cc.mallet.pipe.FeatureSequence2FeatureVector;
@@ -9,7 +10,6 @@ import cc.mallet.pipe.Target2Label;
 import cc.mallet.pipe.TokenSequence2FeatureSequence;
 import cc.mallet.pipe.TokenSequenceLowercase;
 import cc.mallet.types.Instance;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,15 +28,27 @@ public class TextClassifier {
     private static Logger log = LoggerFactory.getLogger(TextClassifier.class);
     private Classifier malletClassifier = null;
     private static Pipe pipe = null;
+    private String service;
 
     public TextClassifier(String productAndCategory, String service) {
         malletClassifier = loadClassifier(productAndCategory, service);
         getPipe();
-
+        this.service = service;
     }
 
     public Classifier getClassifier() {
         return malletClassifier;
+    }
+
+    public boolean classify(Instance product, String link) {
+        Classification result = malletClassifier.classify(product);
+        if(result.getLabeling().getBestLabel().toString().equals("true")) {
+            log.info("TextClassifier (" + service + "): preProcessingProduct " + link + " with classifier ok");
+            return true;
+        } else {
+            log.info("TextClassifier (" + service + "): preProcessingProduct " + link + " with classifier failed");
+            return false;
+        }
     }
 
     private cc.mallet.classify.Classifier loadClassifier(String productAndCategory, String service) {
@@ -66,30 +78,28 @@ public class TextClassifier {
         return classifier;
     }
 
-    public Instance prepareInstance(String currentProductName, String currentProductLink, String currentProductPrice,
-                                  String currentProductCategories, String currentProductDescription, String productQuery,
+    public Instance prepareInstance(String name, String url, String currentProductPrice,
+                                  String categories, String description, String query,
                                     String desiredCategory) {
         if (malletClassifier != null) {
             StringBuilder sb = new StringBuilder();
-            sb.append(currentProductName);
+//        sb.append(name.toLowerCase());
+//        sb.append(";;;");
+            sb.append(url);
             sb.append(";;;");
-            sb.append(currentProductLink);
+            sb.append(categories.toLowerCase());
             sb.append(";;;");
-            sb.append(currentProductPrice);
-            sb.append(";;;");
-            sb.append(currentProductCategories);
-            sb.append(";;;");
-            boolean categoriesContainsDesired = currentProductCategories.toLowerCase().contains(desiredCategory.toLowerCase());
+            boolean categoriesContainsDesired = categories.toLowerCase().contains(desiredCategory.toLowerCase());
             sb.append(categoriesContainsDesired);
             sb.append(";;;");
-            Integer queryCountInDescription = StringUtils.countMatches(currentProductDescription.toLowerCase(), productQuery);
-            sb.append(queryCountInDescription.toString());
-            sb.append(";;;");
-            Integer queryCountInTitle = StringUtils.countMatches(currentProductName.toLowerCase(), productQuery);
-            sb.append(queryCountInTitle.toString());
-            sb.append(";;;");
+//        Integer queryCountInDescription = StringUtils.countMatches(description.toLowerCase(), query.toLowerCase());
+//        sb.append(queryCountInDescription.toString());
+//        sb.append(";;;");
+//        Integer queryCountInTitle = StringUtils.countMatches(name.toLowerCase(), query.toLowerCase());
+//        sb.append(queryCountInTitle.toString());
+//        sb.append(";;;");
 //            log.info(sb.toString());
-            return getPipe().instanceFrom(new Instance(sb.toString(), "", currentProductName, ""));
+            return getPipe().instanceFrom(new Instance(sb.toString(), "", name, ""));
         } else {
             return null;
         }
