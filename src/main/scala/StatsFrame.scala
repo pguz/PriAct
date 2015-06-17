@@ -97,8 +97,6 @@ class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
             maximumSize = new Dimension(450, 30)
             add(btnConcSearch, BorderPanel.Position.Center)
           }
-
-
         }
         contents += new BoxPanel(orientation = Vertical) {
           border = EmptyBorder(top = 10, left = 10, bottom = 10, right = 10)
@@ -126,16 +124,16 @@ class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
       contents += txtStatus
     }
 
-    val eventScheduler = SchedulerEx.SwingEventThreadScheduler
+    //val eventScheduler = SchedulerEx.SwingEventThreadScheduler
 
-  val obsSearchAbst: Observable[String] = btnAbstSearch.clicks.observeOn(eventScheduler).map(
+  val obsSearchAbst: Observable[String] = btnAbstSearch.clicks.map(
     _ => txtSearch.text)
 
-  val obsSearchConc: Observable[Int] = btnConcSearch.clicks.observeOn(eventScheduler).filter(_
+  val obsSearchConc: Observable[Int] = btnConcSearch.clicks.filter(_
     => tblAbstProds.peer.getSelectedRowCount == 1).map(_
     => mdlAbstSearch.getValueAt(tblAbstProds.peer.getSelectedRow, 0).toString.toInt)
 
-  val obsConcStats: Observable[Int] = btnConcStats.clicks.observeOn(eventScheduler).filter(_
+  val obsConcStats: Observable[Int] = btnConcStats.clicks.filter(_
     => tblConcProds.peer.getSelectedRowCount == 1).map(_
     => mdlConcSearch.getValueAt(tblConcProds.peer.getSelectedRow, 0).toString.toInt)
 

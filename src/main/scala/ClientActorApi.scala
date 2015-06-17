@@ -19,8 +19,8 @@ trait ClientActorApi {
 
   implicit val timeout: Timeout = Timeout(120 seconds)
   val system = ActorSystem("PriAct", akkaConfig)
-  val dispatcherActor = system.actorOf(Props(classOf[DispatcherActor]), "dispatcher")
-  val processingActor = system.actorOf(Props(classOf[PriceProcessingActor]), "processing")
+  val dispatcherActor = system.actorOf(Props(classOf[DispatcherActor]).withDispatcher("dbdispatcher"), "dispatcher")
+  val processingActor = system.actorOf(Props(classOf[PriceProcessingActor]).withDispatcher("dbdispatcher"), "processing")
 
   //przeniesc do configu
   def akkaConfig = ConfigFactory.parseString(s"""

@@ -115,14 +115,14 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
       txtStatus.text = s
     }
 
-    val eventScheduler = SchedulerEx.SwingEventThreadScheduler
+    //val eventScheduler = SchedulerEx.SwingEventThreadScheduler
 
-    val obsCboxAll: Observable[Boolean]       = cboxAllegro.stateValues.observeOn(eventScheduler)
-    val obsCboxGum: Observable[Boolean]       = cboxGumtree.stateValues.observeOn(eventScheduler)
-    val obsCboxOlx: Observable[Boolean]       = cboxOlx.stateValues.observeOn(eventScheduler)
-    val obsBtnSearchProd: Observable[Button]  = btnSearchProd.clicks.observeOn(eventScheduler)
-    val obsBtnSearchDesc: Observable[Button]  = btnSearchDesc.clicks.observeOn(eventScheduler)
-    val obsBtnStats: Observable[Button]       = btnStats.clicks.observeOn(eventScheduler)
+    val obsCboxAll: Observable[Boolean]       = cboxAllegro.stateValues
+    val obsCboxGum: Observable[Boolean]       = cboxGumtree.stateValues
+    val obsCboxOlx: Observable[Boolean]       = cboxOlx.stateValues
+    val obsBtnSearchProd: Observable[Button]  = btnSearchProd.clicks
+    val obsBtnSearchDesc: Observable[Button]  = btnSearchDesc.clicks
+    val obsBtnStats: Observable[Button]       = btnStats.clicks
 
     val obsAll:   Observable[(String, Boolean)] = obsCboxAll.map(("Allegro", _))
     val obsGum:   Observable[(String, Boolean)] = obsCboxGum.map(("Gumtree", _))

@@ -57,7 +57,7 @@ class GumtreeActor extends CrawlerActor {
 
     var page = 1
     var endPage = getMaxPageResult(getSourceCode(product, 1))
-    val maxEndPage = 999
+    val maxEndPage = 10
 
     // limitowanie wyników
     if(endPage > maxEndPage) {

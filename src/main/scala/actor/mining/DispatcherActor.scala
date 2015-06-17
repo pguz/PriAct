@@ -45,8 +45,8 @@ class DispatcherActor extends Actor with ActorLogging {
 
   implicit val timeout: Timeout
     = Timeout(120 seconds)
- // var dbActor
-   // = context.actorOf(Props[DBActor], name = "dbactor")
+  var dbActor
+    = context.actorOf(Props[DBActor].withDispatcher("dbdispatcher"), name = "dbactor")
   var crawList: List[CrawlerActorRef]
     = List()
 
@@ -105,7 +105,7 @@ class DispatcherActor extends Actor with ActorLogging {
       case Success(x) => {
         log.debug("GetPrices with success")
         reqSender ! SendListPrices(x)
-          //dbActor ! SendRequestContentAndPrices(prod, x)
+          dbActor ! SendRequestContentAndPrices(prod, x)
         log.debug("Sent prices to DB")
       }
       case Failure(err) => {
@@ -140,11 +140,11 @@ class DispatcherActor extends Actor with ActorLogging {
 
   def createCrawler(crawName: String): Option[CrawlerActorRef] = crawName match {
     case "Allegro"
-      => Some(new AllegroActorRef(context.actorOf(Props[AllegroActor], name = crawName), crawName))
+      => Some(new AllegroActorRef(context.actorOf(Props[AllegroActor].withDispatcher("dbdispatcher"), name = crawName), crawName))
     case "Gumtree"
-      => Some(new GumtreeActorRef(context.actorOf(Props[GumtreeActor], name = crawName), crawName))
+      => Some(new GumtreeActorRef(context.actorOf(Props[GumtreeActor].withDispatcher("dbdispatcher"), name = crawName), crawName))
     case "Olx"
-      => Some(new OlxActorRef(context.actorOf(Props[OlxActor], name = crawName), crawName))
+      => Some(new OlxActorRef(context.actorOf(Props[OlxActor].withDispatcher("dbdispatcher"), name = crawName), crawName))
     case _
       => None
   }
