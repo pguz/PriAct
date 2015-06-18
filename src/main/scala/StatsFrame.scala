@@ -11,7 +11,7 @@ import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
+class StatsFrame extends Frame with ClientActorApi with SwingApi{
 
     title = "Price Monitoring"
     maximumSize = new Dimension(900, 640)
@@ -141,38 +141,38 @@ class StatsFrame extends Frame with ConcreteSwingApi with ClientActorApi {
   obsSearchAbst.subscribe(
     txt => fRequestQuriesList(txt) onComplete {
       case Success(list)   =>
-        if(mdlAbstSearch.getRowCount > 0) mdlAbstSearch.setRowCount(0)
+        swing{ if(mdlAbstSearch.getRowCount > 0) mdlAbstSearch.setRowCount(0)
         list.foreach{ res =>
-          mdlAbstSearch.addRow(Array[AnyRef](res._1.toString, res._2, res._3))}
-      case Failure(err) => txtStatus.text = "getPrices error: " + err.getMessage
+          mdlAbstSearch.addRow(Array[AnyRef](res._1.toString, res._2, res._3))}}
+      case Failure(err) => swing{txtStatus.text = "getPrices error: " + err.getMessage}
     }
   )
 
   obsSearchConc.subscribe(
     id => fRequestQueryResult(id) onComplete {
       case Success(list)   =>
-        if(mdlConcSearch.getRowCount > 0) mdlConcSearch.setRowCount(0)
+        swing{if(mdlConcSearch.getRowCount > 0) mdlConcSearch.setRowCount(0)
         println("Success list: " + list)
         list.foreach{ res =>
-          mdlConcSearch.addRow(Array[AnyRef](res._1.toString, res._2.toString))}
+          mdlConcSearch.addRow(Array[AnyRef](res._1.toString, res._2.toString))}}
         fRequestQueryStats(id) onComplete {
           case Success(stats)   =>
-            if(mdlAbstStats.getRowCount > 0) mdlAbstStats.setRowCount(0)
+            swing{if(mdlAbstStats.getRowCount > 0) mdlAbstStats.setRowCount(0)
             println("Success list: " + stats)
-            mdlAbstStats.addRow(Array[AnyRef](stats._1.toString, stats._2.toString, stats._3.toString))
-          case Failure(err) => txtStatus.text = "getPrices error: " + err.getMessage
+            mdlAbstStats.addRow(Array[AnyRef](stats._1.toString, stats._2.toString, stats._3.toString))}
+          case Failure(err) => swing{txtStatus.text = "getPrices error: " + err.getMessage}
         }
-      case Failure(err) => txtStatus.text = "getPrices error: " + err.getMessage
+      case Failure(err) => swing{txtStatus.text = "getPrices error: " + err.getMessage}
     }
   )
 
   obsConcStats.subscribe(
     id => fRequestProductStats(id) onComplete {
       case Success(stats)   =>
-        if(mdlConcStats.getRowCount > 0) mdlConcStats.setRowCount(0)
+        swing{if(mdlConcStats.getRowCount > 0) mdlConcStats.setRowCount(0)
         println("Success list: " + stats)
-        mdlConcStats.addRow(Array[AnyRef](stats._1.toString, stats._2.toString, stats._3.toString))
-      case Failure(err) => txtStatus.text = "getPrices error: " + err.getMessage
+        mdlConcStats.addRow(Array[AnyRef](stats._1.toString, stats._2.toString, stats._3.toString))}
+      case Failure(err) => swing{txtStatus.text = "getPrices error: " + err.getMessage}
     }
   )
 }

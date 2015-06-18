@@ -1,16 +1,17 @@
 import observablex._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.swing._
+import scala.swing.event.ButtonClicked
 import swing.Swing._
 import javax.swing.table.{DefaultTableModel}
 import javax.swing.UIManager
 import Orientation._
 import scala.util.{Success, Failure }
-import rx.lang.scala.Observable
+import rx.lang.scala.{Subscription, Observable}
 
 
-object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActorApi {
-  
+object Main extends SimpleSwingApplication with ClientActorApi with SwingApi {
+
   {
     try {
       UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
@@ -18,7 +19,6 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
       case t: Throwable =>
     }
   }
-  
 
   def top = new MainFrame {
     val crawList = List("Allegro", "Olx", "Gumtree")
@@ -112,7 +112,7 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     }
 
     def dspStatus(s: String) = {
-      txtStatus.text = s
+      swing { txtStatus.text = s}
     }
 
     //val eventScheduler = SchedulerEx.SwingEventThreadScheduler
@@ -120,9 +120,9 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     val obsCboxAll: Observable[Boolean]       = cboxAllegro.stateValues
     val obsCboxGum: Observable[Boolean]       = cboxGumtree.stateValues
     val obsCboxOlx: Observable[Boolean]       = cboxOlx.stateValues
-    val obsBtnSearchProd: Observable[Button]  = btnSearchProd.clicks
-    val obsBtnSearchDesc: Observable[Button]  = btnSearchDesc.clicks
-    val obsBtnStats: Observable[Button]       = btnStats.clicks
+    val obsBtnSearchProd: Observable[Unit]  = btnSearchProd.clicks
+    val obsBtnSearchDesc: Observable[Unit]  = btnSearchDesc.clicks
+    val obsBtnStats: Observable[Unit]       = btnStats.clicks
 
     val obsAll:   Observable[(String, Boolean)] = obsCboxAll.map(("Allegro", _))
     val obsGum:   Observable[(String, Boolean)] = obsCboxGum.map(("Gumtree", _))
@@ -153,9 +153,9 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
     obsSearchProd.subscribe(
       n => getPrices(n) onComplete {
         case Success(results) =>
-          if(mdlProds.getRowCount > 0) mdlProds.setRowCount(0)
+          swing { if(mdlProds.getRowCount > 0) mdlProds.setRowCount(0)
           results.sortBy(_._4).foreach{ res =>
-            mdlProds.addRow(Array[AnyRef](res._1, res._2, res._3, res._4.toString()))}
+            mdlProds.addRow(Array[AnyRef](res._1, res._2, res._3, res._4.toString()))}}
         case Failure(err)     =>
           dspStatus("getPrices error: " + err.getMessage)
       }
@@ -166,10 +166,10 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
         println("obsSearchDesc")
         getDescription(n._1, n._2) onComplete {
           case Success(desc) =>
-            edtDesc.text = desc
+            swing { edtDesc.text = desc}
           case Failure(err) =>
-            edtDesc.text =
-              "Error: " + err.getMessage
+            swing { edtDesc.text =
+              "Error: " + err.getMessage}
         }
     }
 
@@ -179,5 +179,7 @@ object Main extends SimpleSwingApplication with ConcreteSwingApi with ClientActo
       statsFrame.visible = true
     }
   }
+
+
 }
 

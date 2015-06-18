@@ -40,7 +40,7 @@ class Prices(tag: Tag)
 
   def fk1 = foreignKey("QUERY_FK", queryId, TableQuery[Queries])(_.id)
   def fk2 = foreignKey("PROD_FK", prodId, TableQuery[Products])(_.id)
-  def pk = primaryKey("PRICE_PK", (queryId, prodId))
+ // def pk = primaryKey("PRICE_PK", (queryId, prodId))
 
   def * : ProvenShape[(Int, Int, Double)] =
     (queryId, prodId, value)
